@@ -272,8 +272,8 @@
         "r'": [make_cost(DECENT, 'wrist')],
         r2: [make_cost(DECENT, 'wrist')],
         "r2'": [make_cost(IMPOSSIBLE, 'wrist')],
-        U: [make_cost(ACCEPTABLE, 'index')],
-        "U'": [make_cost(ACCEPTABLE, 'indexL'), make_cost(BAD, 'middleL')],
+        U: [make_cost(GOOD, 'index')],
+        "U'": [make_cost(IDEAL, 'indexL'), make_cost(GOOD, 'middleL')],
         F: [make_cost(GOOD, 'middle'), make_cost(GOOD, 'index')],
         "F'": [make_cost(IDEAL, 'indexL')],
         BR: [make_cost(DECENT, 'middleL')],
@@ -372,16 +372,16 @@
     let auf = '';
     let rot = '';
 
-    const aufMatch = text.match(/^\s*(\(U'??\))\s*/);
-    if (aufMatch) {
-      auf = aufMatch[1];
-      text = text.slice(aufMatch[0].length).trim();
-    }
-
     const rotMatch = text.match(/^\s*(\{[A-Z]+,[A-Z]+\})\s*/);
     if (rotMatch) {
       rot = rotMatch[1];
       text = text.slice(rotMatch[0].length).trim();
+    }
+
+    const aufMatch = text.match(/^\s*(\(U'??\))\s*/);
+    if (aufMatch) {
+      auf = aufMatch[1];
+      text = text.slice(aufMatch[0].length).trim();
     }
 
     text = text.replace(/\b([A-Z]+)w('?|2'?|2)\b/g, function (_, faceMod) {
