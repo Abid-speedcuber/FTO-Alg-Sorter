@@ -100,6 +100,62 @@
     return `rgb(${rgb.join(',')})`;
   }
 
+  let uploadedConfigs = null;
+
+  function updateConfigStatus(message) {
+    const statusLabel = document.getElementById('configStatus');
+    if (statusLabel) {
+      statusLabel.textContent = message;
+    }
+  }
+
+  function getActiveConfigs() {
+    return uploadedConfigs || engine.CONFIGS;
+  }
+
+  function getConfigForNotation(notation) {
+    const configs = getActiveConfigs();
+    return configs && configs[notation] ? configs[notation] : engine.CONFIGS[notation];
+  }
+
+  function downloadConfigs() {
+    const payload = JSON.stringify(engine.CONFIGS, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'configs.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadConfigs(file) {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== 'object' || !parsed.CIF || !parsed.EIF) {
+          throw new Error('The selected JSON must contain CIF and EIF entries.');
+        }
+        uploadedConfigs = parsed;
+        updateConfigStatus('Using uploaded CONFIGS');
+      } catch (error) {
+        uploadedConfigs = null;
+        updateConfigStatus('Invalid CONFIGS JSON');
+      }
+    };
+
+    reader.onerror = () => {
+      uploadedConfigs = null;
+      updateConfigStatus('Failed to read CONFIGS JSON');
+    };
+
+    reader.readAsText(file);
+  }
+
   function analyze() {
     const raw = document.getElementById('algs').value;
     const lines = raw.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
@@ -119,8 +175,7 @@
     const entries = lines.map((line) => {
       const tokenized = parse_alg(line);
       const notation = getCorrectNotationFromRotation(tokenized.rot);
-      // use the uploaded configs file here if it exists
-      const config = engine.CONFIGS[notation];
+      const config = getConfigForNotation(notation);
       let results = [];
       try {
         results = explore_alg(tokenized, config);
@@ -242,6 +297,9 @@
   function init() {
     const analyzeButton = document.getElementById('analyze');
     const algInput = document.getElementById('algs');
+    const downloadButton = document.getElementById('downloadConfig');
+    const uploadButton = document.getElementById('uploadConfigButton');
+    const uploadInput = document.getElementById('uploadConfig');
 
     if (analyzeButton) {
       analyzeButton.addEventListener('click', analyze);
@@ -254,6 +312,23 @@
         }
       });
     }
+
+    if (downloadButton) {
+      downloadButton.addEventListener('click', downloadConfigs);
+    }
+
+    if (uploadButton && uploadInput) {
+      uploadButton.addEventListener('click', () => uploadInput.click());
+      uploadInput.addEventListener('change', (event) => {
+        const [file] = event.target.files || [];
+        if (file) {
+          uploadConfigs(file);
+        }
+        event.target.value = '';
+      });
+    }
+
+    updateConfigStatus('Using built-in CONFIGS');
   }
 
   document.addEventListener('DOMContentLoaded', init);
