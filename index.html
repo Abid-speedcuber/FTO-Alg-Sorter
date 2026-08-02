@@ -31,6 +31,7 @@
 
     --t-front: #34d399;
     --t-top: #818cf8;
+    --t-bottom: #818cf8;
     --t-backplus: #fbbf24;
     --t-backminus: #f472b6;
 
@@ -528,7 +529,9 @@ const cif = {
             "D": [make_cost(DECENT, "ringL")],
             "D'": [make_cost(ACCEPTABLE, "ringL")],
             "BL": [make_cost(TERRIBLE, "wristL")],
-            "BL'": [make_cost(TERRIBLE, "wristL")]
+            "BL'": [make_cost(TERRIBLE, "wristL")],
+            "B": [make_cost(ACCEPTABLE, "index")],
+            "B'": [make_cost(DECENT, "middleL")]
         },
         "top": {
             "R": [make_cost(DECENT, "wrist")],
@@ -550,7 +553,9 @@ const cif = {
             "D": [make_cost(DECENT, "ringL")],
             "D'": [make_cost(ACCEPTABLE, "ringL")],
             "BL": [make_cost(TERRIBLE, "wristL")],
-            "BL'": [make_cost(TERRIBLE, "wristL")]
+            "BL'": [make_cost(TERRIBLE, "wristL")],
+            "B": [make_cost(IDEAL, "index")],
+            "B'": [make_cost(GOOD, "middleL")]
         },
         "back+": {
             "R": [make_cost(IMPOSSIBLE, "wrist")],
@@ -566,13 +571,15 @@ const cif = {
             "F": [make_cost(TERRIBLE, "index")],
             "F'": [make_cost(TERRIBLE, "index")],
             "BR": [make_cost(ACCEPTABLE, "index")],
-            "BR'": [make_cost(TERRIBLE, "INDEX")],
+            "BR'": [make_cost(TERRIBLE, "index")],
             "L": [make_cost(IMPOSSIBLE, "")],
             "L'": [make_cost(IMPOSSIBLE, "")],
             "D": [make_cost(ACCEPTABLE, "index")],
             "D'": [make_cost(TERRIBLE, "ringL")],
             "BL": [make_cost(TERRIBLE, "wristL")],
-            "BL'": [make_cost(TERRIBLE, "wristL")]
+            "BL'": [make_cost(TERRIBLE, "wristL")],
+            "B": [make_cost(TERRIBLE, "middleL")],
+            "B'": [make_cost(DECENT, "middleL")]
         },
         "back-": {
             "R": [make_cost(IDEAL, "wrist")],
@@ -594,13 +601,252 @@ const cif = {
             "D": [make_cost(DECENT, "ringL")],
             "D'": [make_cost(ACCEPTABLE, "ringL")],
             "BL": [make_cost(TERRIBLE, "wristL")],
-            "BL'": [make_cost(TERRIBLE, "wristL")]
+            "BL'": [make_cost(TERRIBLE, "wristL")],
+            "B": [make_cost(TERRIBLE, "middleL")],
+            "B'": [make_cost(BAD, "middleL")]
         }
+    }
+};
+
+const eif = {
+    "transitions": {
+        "front": {
+            "R": "back+",
+            "R'": "bottom",
+            "R2'": "back-",
+            "r": "back+",
+            "r'": "bottom",
+            "r2'": "back-",
+        },
+        "back+": {
+            "R'": "front",
+            "R2'": "bottom",
+            "r'": "front",
+            "r2'": "bottom",
+        },
+        "back-": {
+            "R": "bottom",
+            "R2": "front",
+            "r": "bottom",
+            "r2": "front",
+        },
+        "bottom": {
+            "R": "front",
+            "R2": "back+",
+            "R'": "back-",
+            "r": "front",
+            "r2": "back+",
+            "r'": "back-",
+        },
+    }, // done
+    "regripCosts": {
+        "front": {
+            "back+": REGRIP_GOOD,
+            "back-": REGRIP_BAD,
+            "bottom": REGRIP_GOOD,
+        },
+        "bottom": {
+            "front": REGRIP_GOOD,
+            "back+": REGRIP_BAD,
+            "back-": REGRIP_GOOD,
+        },
+        "back+": {
+            "front": REGRIP_GOOD,
+            "bottom": REGRIP_BAD,
+            "back-": REGRIP_BAD,
+        },
+        "back-": {
+            "bottom": REGRIP_GOOD,
+            "front": REGRIP_BAD,
+            "back+": REGRIP_BAD,
+        },
+    },
+    "wristEquivalences": {
+        "R": "R2'",
+        "R2": "R'",
+        "R'": "R2",
+        "R2'": "R",
+        "r": "r2'",
+        "r2": "r'",
+        "r'": "r2",
+        "r2'": "r"
+    },
+    "costmodel": {
+        "front": {
+            "R": [make_cost(IDEAL, "wrist")],
+            "R'": [make_cost(IDEAL, "wrist")],
+            "R2": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2'": [make_cost(DECENT, "wrist")],
+            "r": [make_cost(IDEAL, "wrist")],
+            "r'": [make_cost(IDEAL, "wrist")],
+            "r2": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2'": [make_cost(DECENT, "wrist")], // done
+            "U": [make_cost(IDEAL, "index")],
+            "U'": [make_cost(IDEAL, "indexL"), make_cost(BAD, "middleL")],
+            "F": [make_cost(ACCEPTABLE, "index")],
+            "F'": [make_cost(DECENT, "index")],
+            "BR": [make_cost(DECENT, "middle"), make_cost(DECENT, "index"), make_cost(BAD, "ringL")],
+            "BR'": [make_cost(DECENT, "indexL"), make_cost(ACCEPTABLE, "index")],
+            "L": [make_cost(ACCEPTABLE, "indexL")],
+            "L'": [make_cost(ACCEPTABLE, "indexL"), make_cost(ACCEPTABLE, "thumbL")],
+            "D": [make_cost(ACCEPTABLE, "ringL"), make_cost(ACCEPTABLE, "ringR")],
+            "D'": [make_cost(DECENT, "ringR")],
+            "BL": [make_cost(BAD, "wristL")],
+            "BL'": [make_cost(BAD, "wristL")],
+            "B": [make_cost(TERRIBLE, "wristL")],
+            "B'": [make_cost(TERRIBLE, "wristL")]
+        }, // done 
+        "bottom": {
+            "R": [make_cost(IDEAL, "wrist")],
+            "R'": [make_cost(DECENT, "wrist")],
+            "R2": [make_cost(DECENT, "wrist")],
+            "R2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r": [make_cost(IDEAL, "wrist")],
+            "r'": [make_cost(DECENT, "wrist")],
+            "r2": [make_cost(DECENT, "wrist")],
+            "r2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "U": [make_cost(ACCEPTABLE, "index")],
+            "U'": [make_cost(ACCEPTABLE, "indexL"), make_cost(BAD, "middleL")],
+            "F": [make_cost(GOOD, "middle"), make_cost(GOOD, "index")],
+            "F'": [make_cost(IDEAL, "indexL")],
+            "BR": [make_cost(DECENT, "middleL")],
+            "BR'": [make_cost(ACCEPTABLE, "middle"), make_cost(BAD, "index")],
+            "L": [make_cost(GOOD, "index")],
+            "L'": [make_cost(GOOD, "indexL"), make_cost(ACCEPTABLE, "thumbL")],
+            "D": [make_cost(DECENT, "INDEX")],
+            "D'": [make_cost(ACCEPTABLE, "INDEX")],
+            "BL": [make_cost(BAD, "wristL")],
+            "BL'": [make_cost(BAD, "wristL")],
+            "B": [make_cost(TERRIBLE, "wristL")],
+            "B'": [make_cost(TERRIBLE, "wristL")]
+        }, // done
+        "back+": {
+            "R": [make_cost(IMPOSSIBLE, "wrist")],
+            "R'": [make_cost(IDEAL, "wrist")],
+            "R2": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2'": [make_cost(DECENT, "wrist")],
+            "r": [make_cost(IMPOSSIBLE, "wrist")],
+            "r'": [make_cost(IDEAL, "wrist")],
+            "r2": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2'": [make_cost(DECENT, "wrist")],
+            "U": [make_cost(BAD, "indexL")],
+            "U'": [make_cost(GOOD, "indexL")],
+            "F": [make_cost(DECENT, "index")],
+            "F'": [make_cost(GOOD, "index")],
+            "BR": [make_cost(BAD, "index")],
+            "BR'": [make_cost(TERRIBLE, "indexL")],
+            "L": [make_cost(IMPOSSIBLE, "")],
+            "L'": [make_cost(TERRIBLE, "thumbL")],
+            "D": [make_cost(TERRIBLE, "index")],
+            "D'": [make_cost(BAD, "index")],
+            "BL": [make_cost(BAD, "wristL")],
+            "BL'": [make_cost(BAD, "wristL")],
+            "B": [make_cost(ACCEPTABLE, "index")],
+            "B'": [make_cost(TERRIBLE, "indexL")]
+        }, // done
+        "back-": {
+            "R": [make_cost(IDEAL, "wrist")],
+            "R'": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2": [make_cost(DECENT, "wrist")],
+            "R2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r": [make_cost(IDEAL, "wrist")],
+            "r'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2": [make_cost(DECENT, "wrist")],
+            "r2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "U": [make_cost(TERRIBLE, "middleL")],
+            "U'": [make_cost(GOOD, "middleL")],
+            "F": [make_cost(BAD, "indexL")],
+            "F'": [make_cost(DECENT, "indexL")],
+            "BR": [make_cost(IMPOSSIBLE, "")],
+            "BR'": [make_cost(IMPOSSIBLE, "")],
+            "L": [make_cost(ACCEPTABLE, "index")],
+            "L'": [make_cost(DECENT, "indexL")],
+            "D": [make_cost(DECENT, "index")],
+            "D'": [make_cost(ACCEPTABLE, "index")],
+            "BL": [make_cost(BAD, "wristL")],
+            "BL'": [make_cost(BAD, "wristL")]
+        } // done
     }
 }
 
 const CONFIGS = {
-    "CIF": cif
+    "CIF": cif,
+    "EIF": eif
+}
+
+function getCorrectNotationFromRotation(rot) {
+    if (!rot) {
+        return "CIF";
+    }
+    var faceMap = {
+        "U": {
+            "R": "EIF",
+            "L": "EIF",
+            "B": "EIF",
+            "F": "CIF",
+            "BL": "CIF",
+            "BR": "CIF",
+        },
+        "R": {
+            "U": "EIF",
+            "BR": "EIF",
+            "F": "EIF",
+            "L": "CIF",
+            "B": "CIF",
+            "D": "CIF",
+        },
+        "F": {
+            "R": "EIF",
+            "L": "EIF",
+            "D": "EIF",
+            "U": "CIF",
+            "BL": "CIF",
+            "BR": "CIF",
+        },
+        "L": {
+            "U": "EIF",
+            "F": "EIF",
+            "BL": "EIF",
+            "R": "CIF",
+            "D": "CIF",
+            "B": "CIF",
+        },
+        "B": {
+            "U": "EIF",
+            "BR": "EIF",
+            "BL": "EIF",
+            "R": "CIF",
+            "L": "CIF",
+            "D": "CIF",
+        },
+        "D": {
+            "BR": "EIF",
+            "BL": "EIF",
+            "F": "EIF",
+            "B": "CIF",
+            "R": "CIF",
+            "L": "CIF",
+        },
+        "BR": {
+            "R": "EIF",
+            "D": "EIF",
+            "B": "EIF",
+            "F": "CIF",
+            "U": "CIF",
+            "BL": "CIF",
+        },
+        "BL": {
+            "B": "EIF",
+            "L": "EIF",
+            "D": "EIF",
+            "U": "CIF",
+            "F": "CIF",
+            "BR": "CIF",
+        },
+    }
+    var letters = rot.replaceAll(/\{|\}/g, "").split(",");
+    console.log(letters);
+    return faceMap[letters[0]][letters[1]];
 }
 
 function make_cost(cost, finger) {
@@ -788,10 +1034,11 @@ const THUMB_COLOR = {
     front: 'var(--t-front)',
     top: 'var(--t-top)',
     'back+': 'var(--t-backplus)',
-    'back-': 'var(--t-backminus)'
+    'back-': 'var(--t-backminus)',
+    bottom: 'var(--t-bottom)'
 };
 
-const THUMB_LABEL = { front: 'Front', top: 'Top', 'back+': 'Back+', 'back-': 'Back\u2212' };
+const THUMB_LABEL = { front: 'Front', top: 'Top', 'back+': 'Back+', 'back-': 'Back-', "bottom": "Bottom" };
 
 function fingerLabel(base, left) {
     if (base === 'none') return '\u2014';
@@ -876,9 +1123,11 @@ function analyze() {
 
     const entries = lines.map(line => {
         const tokenized = parse_alg(line);
+        var notation = getCorrectNotationFromRotation(tokenized.rot)
+        var config = CONFIGS[notation];
         let results = [];
         try {
-            results = explore_alg(tokenized, cif);
+            results = explore_alg(tokenized, config);
         } catch (e) {
             results = [];
         }
