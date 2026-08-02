@@ -12,12 +12,8 @@
     --secondary: #f2a65a;
     --accent: #fb7185;
     
-    --f-thumb: #f2a65a;
-    --f-index: #5eead4;
-    --f-middle: #a78bfa;
-    --f-ring: #fb7185;
-    --f-wrist: #60a5fa;
-    --f-none: #8a9099;
+    --h-right: #fb7185;
+    --h-left: #60a5fa;
     
     --t-front: #34d399;
     --t-top: #818cf8;
@@ -349,6 +345,7 @@ details[open] .chevron { transform: rotate(90deg); }
 
 .move {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 6px;
     background: var(--surface-2);

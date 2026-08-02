@@ -18,13 +18,9 @@
     return { base: 'none', left: false };
   }
 
-  const FINGER_COLOR = {
-    thumb: 'var(--f-thumb)',
-    index: 'var(--f-index)',
-    middle: 'var(--f-middle)',
-    ring: 'var(--f-ring)',
-    wrist: 'var(--f-wrist)',
-    none: 'var(--f-none)'
+  const HAND_COLOR = {
+    left: 'var(--h-left)',
+    right: 'var(--h-right)',
   };
 
   const THUMB_COLOR = {
@@ -48,16 +44,16 @@
   }
 
   function renderLegend() {
-    const fingerItems = ['thumb', 'index', 'middle', 'ring', 'wrist', 'none']
-      .map((finger) => `<span class="legend-item"><span class="dot" style="background:${FINGER_COLOR[finger]}"></span>${fingerLabel(finger, false)}</span>`)
+    const fingerItems = ['left', 'right']
+      .map((hand) => `<span class="legend-item"><span class="dot" style="background:${HAND_COLOR[hand]}"></span>${fingerLabel(hand, false)}</span>`)
       .join('');
     const thumbItems = Object.keys(THUMB_COLOR)
       .map((thumb) => `<span class="legend-item"><span class="dot" style="background:${THUMB_COLOR[thumb]}"></span>${THUMB_LABEL[thumb]}</span>`)
       .join('');
     return `
       <div class="legend">
-        <div class="legend-group"><span class="legend-title">Finger</span>${fingerItems}</div>
-        <div class="legend-group"><span class="legend-title">Thumb position</span>${thumbItems}</div>
+        <div class="legend-group"><span class="legend-title">Hand</span>${fingerItems}</div>
+        <div class="legend-group"><span class="legend-title">Thumb</span>${thumbItems}</div>
       </div>`;
   }
 
@@ -77,13 +73,17 @@
     html += '<div class="move-list">';
     for (const move of result.fingertricks) {
       const { base, left } = normalizeFinger(move.finger);
-      const color = FINGER_COLOR[base] || FINGER_COLOR.none;
+      var leftColor = HAND_COLOR['right'];
+      if (left) {
+        leftColor = HAND_COLOR['left'];
+      }
       const thumbColor = THUMB_COLOR[move.thumb] || 'var(--text-muted)';
       const thumbLabel = THUMB_LABEL[move.thumb] || move.thumb || '?';
       html += `
         <div class="move${move.regrip ? ' regrip' : ''}">
           <span class="move-thumb" style="background:${thumbColor}">${thumbLabel}</span>
-          <span class="move-token" style="color:${color}">${escapeHtml(move.token)}</span>
+          <span class="move-thumb" style="background:${leftColor}">${base}</span>
+          <span class="move-token">${escapeHtml(move.token)}</span>
           ${move.regrip ? '<span class="move-regrip-tag">regrip</span>' : ''}
         </div>`;
     }
