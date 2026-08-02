@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTO Fingertrick Sorter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14161a;
+    --surface: #1b1e24;
+    --surface-2: #21252c;
+    --border: #2b3038;
+    --text: #ece9e3;
+    --text-muted: #8a9099;
+    --text-faint: #565b64;
+
+    --primary: #5eead4;
+    --primary-dim: #234945;
+    --secondary: #f2a65a;
+    --accent: #fb7185;
+
+    --f-thumb: #f2a65a;
+    --f-index: #5eead4;
+    --f-middle: #a78bfa;
+    --f-ring: #fb7185;
+    --f-wrist: #60a5fa;
+    --f-none: #8a9099;
+
+    --t-front: #34d399;
+    --t-top: #818cf8;
+    --t-backplus: #fbbf24;
+    --t-backminus: #f472b6;
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 38px);
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    color: var(--text-muted);
+    margin: 0;
+    max-width: 60ch;
+    font-size: 15px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  label.field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  textarea:focus { border-color: var(--primary); }
+  textarea::placeholder { color: var(--text-faint); }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hint { font-size: 13px; color: var(--text-faint); }
+
+  .options-per-alg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .options-per-alg label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .options-per-alg input {
+    width: 54px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 6px 8px;
+    outline: none;
+  }
+
+  .options-per-alg input:focus { border-color: var(--primary); }
+
+  button#analyze {
+    background: var(--primary);
+    color: #0b1210;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  button#analyze:hover { box-shadow: 0 0 0 3px var(--primary-dim); }
+  button#analyze:active { transform: translateY(1px); }
+
+  section#results { margin-top: 40px; }
+
+  .results-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .results-head h2 {
+    font-family: var(--font-display);
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .copy-btn {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .copy-btn:hover { background: var(--primary-dim); }
+
+  .copy-btn.copied {
+    color: #0b1210;
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .copy-btn svg { flex-shrink: 0; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-bottom: 22px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .legend-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .legend-title { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; color: var(--text-faint); margin-right: 4px; }
+
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: #0b1210;
+    font-weight: 700;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .card summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .card summary::-webkit-details-marker { display: none; }
+
+  .rank {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    width: 22px;
+    flex-shrink: 0;
+  }
+
+  .alg-text {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  .alg-text.invalid { color: var(--accent); font-style: italic; }
+
+  .meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+  .thumb-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .cost-wrap { display: flex; align-items: center; gap: 8px; }
+  .cost-num { font-family: var(--font-mono); font-size: 14px; font-weight: 700; width: 48px; text-align: right; }
+  .cost-bar-track { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .cost-bar-fill { height: 100%; border-radius: 3px; }
+
+  .chevron {
+    color: var(--text-faint);
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+  details[open] .chevron { transform: rotate(90deg); }
+
+  .card-body {
+    padding: 4px 18px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .start-line {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 14px 0 12px;
+  }
+
+  .option-block + .option-block {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .option-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 10px;
+  }
+
+  .option-index {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+  }
+
+  .option-cost {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .move-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .move {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 9px;
+  }
+
+  .move.regrip { border-style: dashed; border-color: var(--accent); }
+
+  .move-token {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .move-thumb {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #0b1210;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .move-regrip-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .empty {
+    color: var(--text-faint);
+    font-size: 14px;
+    padding: 30px 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FTO &middot; fingertrick engine</p>
+    <h1>FTO Fingertrick Sorter</h1>
+    <p>Paste FTO algorithms, one per line. Each is run through the fingertrick cost model and ranked by execution cost &mdash; cheapest first. Expand any result to see the finger and thumb-position path.</p>
+  </header>
+
+  <div class="panel">
+    <label class="field-label" for="algs">Algorithms (one per line)</label>
+    <textarea id="algs" placeholder="L U' r' F R F' r U R' L'&#10;R U R' U'&#10;F R' F' R"></textarea>
+    <div class="controls">
+      <span class="hint">Uses the CIF fingertrick model</span>
+      <div class="options-per-alg">
+        <label for="numOptions">Options per alg</label>
+        <input type="number" id="numOptions" min="1" max="4" value="1">
+      </div>
+      <button id="analyze">Analyze</button>
+    </div>
+  </div>
+
+  <section id="results"></section>
+</div>
+
+<script>
+// ---------------------------------------------------------------------
+// Fingertrick engine (ported from main.js)
+// ---------------------------------------------------------------------
+// FTO Alg Sorter
+const RESET = 0.3;
+const REGRIP_GOOD = 0.7;
+const REGRIP_BAD = 1.4;
+
+
+
+const IMPOSSIBLE = 10;
+const TERRIBLE = 4;
+const BAD = 2.2;
+const ACCEPTABLE = 1.8;
+const DECENT = 1.4;
+const GOOD = 1.2;
+const IDEAL = 1;
+const OVERLOAD_PENALTY = 0.4;
+
+const cif = {
+    "transitions": {
+        "front": {
+            "R": "top",
+            "R2": "back+",
+            "R'": "back-",
+            "r": "top",
+            "r2": "back+",
+            "r'": "back-",
+        },
+        "top": {
+            "R'": "front",
+            "R2'": "back-",
+            "R": "back+",
+            "r'": "front",
+            "r2'": "back-",
+            "r": "back+"
+        },
+        "back+": {
+            "R'": "top",
+            "R2'": "front",
+            "r'": "top",
+            "r2'": "front"
+        },
+        "back-": {
+            "R": "front",
+            "R2": "top",
+            "r": "front",
+            "r2": "top"
+        }
+    },
+    "regripCosts": {
+        "front": {
+            "top": REGRIP_GOOD,
+            "back+": REGRIP_BAD,
+            "back-": REGRIP_BAD,
+        },
+        "top": {
+            "front": REGRIP_GOOD,
+            "back+": REGRIP_BAD,
+            "back-": REGRIP_BAD,
+        },
+        "back+": {
+            "front": REGRIP_BAD,
+            "top": REGRIP_GOOD,
+            "back-": REGRIP_BAD,
+        },
+        "back-": {
+            "front": REGRIP_GOOD,
+            "top": REGRIP_BAD,
+            "back+": REGRIP_BAD,
+        },
+    },
+    "wristEquivalences": {
+        "R": "R2'",
+        "R2": "R'",
+        "R'": "R2",
+        "R2'": "R",
+        "r": "r2'",
+        "r2": "r'",
+        "r'": "r2",
+        "r2'": "r"
+    },
+    "costmodel": {
+        "front": {
+            "R": [make_cost(IDEAL, "wrist")],
+            "R'": [make_cost(IDEAL, "wrist")],
+            "R2": [make_cost(DECENT, "wrist")],
+            "R2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r": [make_cost(IDEAL, "wrist")],
+            "r'": [make_cost(IDEAL, "wrist")],
+            "r2": [make_cost(DECENT, "wrist")],
+            "r2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "U": [make_cost(IDEAL, "index"), make_cost(GOOD, "middle")],
+            "U'": [make_cost(IDEAL, "indexL"), make_cost(BAD, "middleL")],
+            "F": [make_cost(DECENT, "index")],
+            "F'": [make_cost(ACCEPTABLE, "index")],
+            "BR": [make_cost(BAD, "middle"), make_cost(BAD, "ringL"), make_cost(BAD, "middleL")],
+            "BR'": [make_cost(ACCEPTABLE, "middle")],
+            "L": [make_cost(DECENT, "index")],
+            "L'": [make_cost(ACCEPTABLE, "indexL")],
+            "D": [make_cost(DECENT, "ringL")],
+            "D'": [make_cost(ACCEPTABLE, "ringL")],
+            "BL": [make_cost(TERRIBLE, "wristL")],
+            "BL'": [make_cost(TERRIBLE, "wristL")]
+        },
+        "top": {
+            "R": [make_cost(DECENT, "wrist")],
+            "R'": [make_cost(IDEAL, "wrist")],
+            "R2": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2'": [make_cost(DECENT, "wrist")],
+            "r": [make_cost(DECENT, "wrist")],
+            "r'": [make_cost(IDEAL, "wrist")],
+            "r2": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2'": [make_cost(DECENT, "wrist")],
+            "U": [make_cost(GOOD, "index")],
+            "U'": [make_cost(IDEAL, "indexL"), make_cost(BAD, "middleL")],
+            "F": [make_cost(ACCEPTABLE, "ring")],
+            "F'": [make_cost(DECENT, "ring")],
+            "BR": [make_cost(DECENT, "middle"), make_cost(DECENT, "index")],
+            "BR'": [make_cost(DECENT, "indexL"), make_cost(ACCEPTABLE, "index")],
+            "L": [make_cost(BAD, "thumb")],
+            "L'": [make_cost(DECENT, "indexL"), make_cost(ACCEPTABLE, "thumbL")],
+            "D": [make_cost(DECENT, "ringL")],
+            "D'": [make_cost(ACCEPTABLE, "ringL")],
+            "BL": [make_cost(TERRIBLE, "wristL")],
+            "BL'": [make_cost(TERRIBLE, "wristL")]
+        },
+        "back+": {
+            "R": [make_cost(IMPOSSIBLE, "wrist")],
+            "R'": [make_cost(IDEAL, "wrist")],
+            "R2": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2'": [make_cost(DECENT, "wrist")],
+            "r": [make_cost(IMPOSSIBLE, "wrist")],
+            "r'": [make_cost(IDEAL, "wrist")],
+            "r2": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2'": [make_cost(DECENT, "wrist")],
+            "U": [make_cost(ACCEPTABLE, "indexL")],
+            "U'": [make_cost(IDEAL, "indexL")],
+            "F": [make_cost(TERRIBLE, "index")],
+            "F'": [make_cost(TERRIBLE, "index")],
+            "BR": [make_cost(ACCEPTABLE, "index")],
+            "BR'": [make_cost(TERRIBLE, "INDEX")],
+            "L": [make_cost(IMPOSSIBLE, "")],
+            "L'": [make_cost(IMPOSSIBLE, "")],
+            "D": [make_cost(ACCEPTABLE, "index")],
+            "D'": [make_cost(TERRIBLE, "ringL")],
+            "BL": [make_cost(TERRIBLE, "wristL")],
+            "BL'": [make_cost(TERRIBLE, "wristL")]
+        },
+        "back-": {
+            "R": [make_cost(IDEAL, "wrist")],
+            "R'": [make_cost(IMPOSSIBLE, "wrist")],
+            "R2": [make_cost(DECENT, "wrist")],
+            "R2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r": [make_cost(IDEAL, "wrist")],
+            "r'": [make_cost(IMPOSSIBLE, "wrist")],
+            "r2": [make_cost(DECENT, "wrist")],
+            "r2'": [make_cost(IMPOSSIBLE, "wrist")],
+            "U": [make_cost(TERRIBLE, "middle")],
+            "U'": [make_cost(GOOD, "indexL")],
+            "F": [make_cost(GOOD, "ring")],
+            "F'": [make_cost(DECENT, "ring")],
+            "BR": [make_cost(IMPOSSIBLE, "")],
+            "BR'": [make_cost(IMPOSSIBLE, "")],
+            "L": [make_cost(BAD, "index")],
+            "L'": [make_cost(ACCEPTABLE, "indexL")],
+            "D": [make_cost(DECENT, "ringL")],
+            "D'": [make_cost(ACCEPTABLE, "ringL")],
+            "BL": [make_cost(TERRIBLE, "wristL")],
+            "BL'": [make_cost(TERRIBLE, "wristL")]
+        }
+    }
+}
+
+const CONFIGS = {
+    "CIF": cif
+}
+
+function make_cost(cost, finger) {
+    return {
+        "cost": cost,
+        "finger": finger
+    }
+}
+
+function parse_alg(alg) {
+    if (typeof alg !== 'string') {
+        alg = String(alg || '');
+    }
+
+    let text = alg.trim();
+    let auf = '';
+    let rot = '';
+
+    const aufMatch = text.match(/^\s*(\(U'?\))\s*/);
+    if (aufMatch) {
+        auf = aufMatch[1];
+        text = text.slice(aufMatch[0].length).trim();
+    }
+
+    const rotMatch = text.match(/^\s*(\{[A-Z]+,[A-Z]+\})\s*/);
+    if (rotMatch) {
+        rot = rotMatch[1];
+        text = text.slice(rotMatch[0].length).trim();
+    }
+
+    text = text.replace(/\b([A-Z]+)w('?|2'?|2)\b/g, function (_, faceMod) {
+        const face = faceMod.slice(0, -1).toLowerCase();
+        const suffix = faceMod.slice(-1);
+        if (suffix === 'w' || suffix === 'W') {
+            return face;
+        }
+        return face + suffix;
+    });
+
+    const tokenRegex = /([A-Z]{1,2}|[a-z]{1,2})(?:2'|2|'|')?/g;
+    const tokens = [];
+    let tokenMatch;
+    while ((tokenMatch = tokenRegex.exec(text)) !== null) {
+        tokens.push(tokenMatch[0]);
+    }
+
+    return {
+        tokens,
+        auf,
+        rot
+    };
+}
+
+function _search_alg(tokens, index, fingertricks, thumbs, cost, config, regrips, isRegrip) {
+    if (regrips > 1) {
+        return null;
+    }
+    if (index == tokens.length) {
+        const withThumbFingerTricks = fingertricks.map(move => ({ ...move }));
+        for (var i = 0; i < withThumbFingerTricks.length; i++) {
+            withThumbFingerTricks[i].thumb = thumbs[i];
+        }
+        return {
+            fingertricks: withThumbFingerTricks,
+            cost,
+            regrips
+        }
+    }
+    var currentThumb = thumbs[thumbs.length - 1];
+    var currentToken = tokens[index];
+    var baseCostOptions = config.costmodel[currentThumb][currentToken] || [];
+    var costOptions = baseCostOptions.map(option => ({ ...option, token: currentToken }));
+
+    // populate the cost options with their respective moves because wrist turn options might include moves other than current token
+    // also makes sure that the fingertrick path includes all moves taken
+    if (costOptions.length > 0 && costOptions[0].finger == "wrist") {
+        const alternative = config.wristEquivalences[currentToken];
+        const alternative_options = (config.costmodel[currentThumb][alternative] || []).map(option => ({ ...option, token: alternative }));
+        costOptions.push(...alternative_options);
+    }
+    if (isRegrip) {
+        for (const option of costOptions ) {
+            option.regrip = true;
+        }
+    }
+
+    var lastFinger = "";
+    if (fingertricks.length > 0) {
+        lastFinger = fingertricks[fingertricks.length - 1].finger;
+    }
+
+    var optionResults = [];
+    for (const option of costOptions) {
+        var new_thumb = currentThumb;
+        // TODO: allow regrips if the moves are evaluated as impossible
+        if (option.finger == "wrist") {
+            new_thumb = config.transitions[currentThumb][option.token];
+        }
+        // allow re-gripping before any R/r move
+        if ((option.finger == "wrist" && !config.transitions[currentThumb][option.token]) || option.cost == IMPOSSIBLE) {
+            for (const key of Object.keys(config.transitions)) {
+                const regripCost = config.regripCosts[currentThumb][key];
+                if (regripCost) {
+                    const newThumbsRegrip = [...thumbs];
+                    newThumbsRegrip[newThumbsRegrip.length - 1] = key;
+                    optionResults.push(_search_alg(tokens, index, fingertricks, newThumbsRegrip, cost + regripCost, config, regrips + 1, true));
+                }
+            }
+            continue;
+        }
+        const newFingertricks = fingertricks.concat(option);
+        const newThumbs = thumbs.concat(new_thumb);
+        var current_finger = option.finger;
+        var optionCost = cost + option.cost;
+        if (lastFinger == current_finger && current_finger != "wrist") {
+            optionCost += OVERLOAD_PENALTY;
+        }
+
+        optionResults.push(_search_alg(tokens, index + 1, newFingertricks, newThumbs, optionCost, config, regrips, false));
+    }
+
+    var bestResult = null;
+    for (const result of optionResults) {
+        if (!result) {
+            continue;
+        }
+        if (!bestResult || result.cost < bestResult.cost) {
+            bestResult = result;
+        }
+    }
+    return bestResult;
+}
+
+function explore_alg(tokenized, config) {
+    var tokens = tokenized.tokens;
+    var path_options = []
+    for (const key of Object.keys(config.transitions)) {
+        const result = _search_alg(tokens, 0, [], [key], 0, config, 0, false);
+        result.auf = tokenized.auf;
+        result.rot = tokenized.rot;
+        path_options.push(result);
+    }
+
+    return path_options
+        .filter(Boolean)
+        .sort((a, b) => a.cost - b.cost);
+    }
+    
+function resultToAlgStr(result) {
+    const joined = result.fingertricks.map((e) => e.token).join(" ");
+    const joinParts = [];
+    if (result.auf) {
+        joinParts.push(result.auf);
+    }
+    if (result.rot) {
+        joinParts.push(result.rot);
+    }
+    joinParts.push(joined);
+    return joinParts.join(" ");
+}
+// ---------------------------------------------------------------------
+// Frontend
+// ---------------------------------------------------------------------
+function normalizeFinger(f) {
+    if (!f) return { base: 'none', left: false };
+    const lower = f.toLowerCase();
+    const bases = ['thumb', 'index', 'middle', 'ring', 'wrist'];
+    for (const b of bases) {
+        if (lower === b) return { base: b, left: false };
+        if (lower === b + 'l') return { base: b, left: true };
+    }
+    return { base: 'none', left: false };
+}
+
+const FINGER_COLOR = {
+    thumb: 'var(--f-thumb)',
+    index: 'var(--f-index)',
+    middle: 'var(--f-middle)',
+    ring: 'var(--f-ring)',
+    wrist: 'var(--f-wrist)',
+    none: 'var(--f-none)'
+};
+
+const THUMB_COLOR = {
+    front: 'var(--t-front)',
+    top: 'var(--t-top)',
+    'back+': 'var(--t-backplus)',
+    'back-': 'var(--t-backminus)'
+};
+
+const THUMB_LABEL = { front: 'Front', top: 'Top', 'back+': 'Back+', 'back-': 'Back\u2212' };
+
+function fingerLabel(base, left) {
+    if (base === 'none') return '\u2014';
+    const name = base.charAt(0).toUpperCase() + base.slice(1);
+    return left ? name + ' (L)' : name;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderLegend() {
+    const fingerItems = ['thumb', 'index', 'middle', 'ring', 'wrist', 'none'].map(f =>
+        `<span class="legend-item"><span class="dot" style="background:${FINGER_COLOR[f]}"></span>${fingerLabel(f, false)}</span>`
+    ).join('');
+    const thumbItems = Object.keys(THUMB_COLOR).map(t =>
+        `<span class="legend-item"><span class="dot" style="background:${THUMB_COLOR[t]}"></span>${THUMB_LABEL[t]}</span>`
+    ).join('');
+    return `
+      <div class="legend">
+        <div class="legend-group"><span class="legend-title">Finger</span>${fingerItems}</div>
+        <div class="legend-group"><span class="legend-title">Thumb position</span>${thumbItems}</div>
+      </div>`;
+}
+
+function renderOptionBlock(result, index, showHeader) {
+    const startThumb = result.fingertricks.length > 0 ? result.fingertricks[0].thumb : null;
+    let html = '<div class="option-block">';
+    if (showHeader) {
+        html += `
+          <div class="option-head">
+            <span class="option-index">Option ${index + 1}</span>
+            <span class="option-cost">${result.cost.toFixed(2)}</span>
+          </div>`;
+    }
+    if (startThumb) {
+        html += `<div class="start-line">Start &middot; thumb at <span style="color:${THUMB_COLOR[startThumb] || 'var(--text-muted)'}">${THUMB_LABEL[startThumb] || startThumb}</span></div>`;
+    }
+    html += '<div class="move-list">';
+    for (const move of result.fingertricks) {
+        const { base, left } = normalizeFinger(move.finger);
+        const color = FINGER_COLOR[base] || FINGER_COLOR.none;
+        const thumbColor = THUMB_COLOR[move.thumb] || 'var(--text-muted)';
+        const thumbLbl = THUMB_LABEL[move.thumb] || move.thumb || '?';
+        html += `
+          <div class="move${move.regrip ? ' regrip' : ''}">
+            <span class="move-thumb" style="background:${thumbColor}">${thumbLbl}</span>
+            <span class="move-token" style="color:${color}">${escapeHtml(move.token)}</span>
+            ${move.regrip ? '<span class="move-regrip-tag">regrip</span>' : ''}
+          </div>`;
+    }
+    html += '</div></div>';
+    return html;
+}
+
+function costColor(cost, min, max) {
+    if (max === min) return 'var(--primary)';
+    const t = Math.max(0, Math.min(1, (cost - min) / (max - min)));
+    // interpolate teal (good) -> rose (bad)
+    const good = [94, 234, 212];
+    const bad = [251, 113, 133];
+    const rgb = good.map((g, i) => Math.round(g + (bad[i] - g) * t));
+    return `rgb(${rgb.join(',')})`;
+}
+
+
+function analyze() {
+    const raw = document.getElementById('algs').value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const resultsSection = document.getElementById('results');
+
+    const numOptionsInput = document.getElementById('numOptions');
+    let numOptions = parseInt(numOptionsInput.value, 10);
+    if (!Number.isFinite(numOptions) || numOptions < 1) numOptions = 1;
+    if (numOptions > 4) numOptions = 4;
+    numOptionsInput.value = numOptions;
+
+    if (lines.length === 0) {
+        resultsSection.innerHTML = '<div class="empty">Paste one or more algorithms above, then hit Analyze.</div>';
+        return;
+    }
+
+    const entries = lines.map(line => {
+        const tokenized = parse_alg(line);
+        let results = [];
+        try {
+            results = explore_alg(tokenized, cif);
+        } catch (e) {
+            results = [];
+        }
+        const best = results.length > 0 ? results[0] : null;
+        return { alg: line, best, results };
+    });
+
+    entries.sort((a, b) => {
+        const ca = a.best ? a.best.cost : Infinity;
+        const cb = b.best ? b.best.cost : Infinity;
+        return ca - cb;
+    });
+
+    const validCosts = entries.filter(e => e.best).map(e => e.best.cost);
+    const min = validCosts.length ? Math.min(...validCosts) : 0;
+    const max = validCosts.length ? Math.max(...validCosts) : 1;
+
+    let html = `
+      <div class="results-head">
+        <h2>Results &middot; ${entries.length} alg${entries.length > 1 ? 's' : ''}</h2>
+        <button id="copyResults" class="copy-btn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span class="copy-btn-label">Copy top executions</span>
+        </button>
+      </div>`;
+    html += renderLegend();
+
+    entries.forEach((entry, i) => {
+        const { alg, best, results } = entry;
+        if (!best) {
+            html += `
+              <details class="card">
+                <summary>
+                  <span class="rank">${i + 1}</span>
+                  <span class="alg-text invalid">${escapeHtml(alg)}</span>
+                  <span class="thumb-chip">no valid path</span>
+                </summary>
+                <div class="card-body"><div class="start-line">No fingertrick path found within the regrip limit.</div></div>
+              </details>`;
+            return;
+        }
+        const startThumb = best.fingertricks.length > 0 ? best.fingertricks[0].thumb : null;
+        const pct = max === min ? 100 : Math.round(((best.cost - min) / (max - min)) * 100);
+        const barColor = costColor(best.cost, min, max);
+        const algStr = resultToAlgStr(best);
+        html += `
+          <details class="card">
+            <summary>
+              <span class="rank">${i + 1}</span>
+              <span class="alg-text">${escapeHtml(algStr)}</span>
+              <span class="meta">
+                ${startThumb ? `<span class="thumb-chip">start: ${THUMB_LABEL[startThumb] || startThumb}</span>` : ''}
+                <span class="cost-wrap">
+                  <span class="cost-bar-track"><span class="cost-bar-fill" style="width:${pct}%;background:${barColor}"></span></span>
+                  <span class="cost-num" style="color:${barColor}">${best.cost.toFixed(2)}</span>
+                </span>
+              </span>
+              <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+            </summary>
+            <div class="card-body">${results.slice(0, numOptions).map((r, oi) => renderOptionBlock(r, oi, numOptions > 1)).join('')}</div>
+          </details>`;
+    });
+
+    resultsSection.innerHTML = html;
+
+    const copyBtn = document.getElementById('copyResults');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => copyTopExecutions(entries, copyBtn));
+    }
+}
+
+
+function copyTopExecutions(entries, btn) {
+    const lines = entries
+        .filter(e => e.best)
+        .map(e => resultToAlgStr(e.best));
+
+    const text = lines.join('\n');
+    const label = btn.querySelector('.copy-btn-label');
+    const originalLabel = label ? label.textContent : '';
+
+    const showState = (msg, ok) => {
+        if (!label) return;
+        label.textContent = msg;
+        btn.classList.toggle('copied', ok);
+        setTimeout(() => {
+            label.textContent = originalLabel;
+            btn.classList.remove('copied');
+        }, 1500);
+    };
+
+    if (!text) {
+        showState('No valid executions', false);
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => showState('Copied!', true))
+            .catch(() => showState('Copy failed', false));
+    } else {
+        const helper = document.createElement('textarea');
+        helper.value = text;
+        helper.style.position = 'fixed';
+        helper.style.opacity = '0';
+        document.body.appendChild(helper);
+        helper.select();
+        try {
+            document.execCommand('copy');
+            showState('Copied!', true);
+        } catch (e) {
+            showState('Copy failed', false);
+        }
+        document.body.removeChild(helper);
+    }
+}
+
+document.getElementById('analyze').addEventListener('click', analyze);
+document.getElementById('algs').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) analyze();
+});
+</script>
+</body>
+</html>
