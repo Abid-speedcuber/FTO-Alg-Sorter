@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link href="main.css" rel="stylesheet">
+<script type="module" src="frontend.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -24,7 +25,7 @@
       <span class="hint">Defaults to CIF, switches to EIF if the alg starts with an EIF rotation.</span>
       <div class="options-per-alg">
         <label for="numOptions">Options per alg</label>
-        <input type="number" id="numOptions" min="1" max="4" value="2">
+        <input type="number" id="numOptions" min="1" max="100" value="2">
       </div>
       <input id="uploadConfig" type="file" accept="application/json,.json" hidden>
       <button id="analyze">Analyze</button>
@@ -44,7 +45,5 @@
   <section id="results"></section>
 </div>
 
-<script src="engine.js"></script>
-<script src="frontend.js"></script>
 </body>
 </html>
