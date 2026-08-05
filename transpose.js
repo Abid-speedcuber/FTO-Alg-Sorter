@@ -1,9 +1,9 @@
 const transpositionMatrix = `
 // u on top
 u,f,r,l,b,br,bl,d
-u,r,br,f,bl,l,b,d
+u,r,br,f,bl,b,l,d
 u,br,b,r,l,bl,f,d
-u,b,bl,br,l,r,f,d
+u,b,bl,br,f,l,r,d
 u,bl,l,b,r,f,br,d
 u,l,f,bl,br,r,b,d
 // f on top
@@ -64,15 +64,16 @@ function buildRotationMap() {
         if (!line || line.startsWith('//')) continue;
         var faces = line.split(",").map((c) => c.toUpperCase());
         var rotationName = `{${faces[0]},${faces[1]}}`;
+        // u,r,br,f,bl,l,b,d
         rotationMap[rotationName] = {
-            [faces[0]]: "U",
-            [faces[1]]: "F",
-            [faces[2]]: "R",
-            [faces[3]]: "L",
-            [faces[4]]: "B",
-            [faces[5]]: "BR",
-            [faces[6]]: "BL",
-            [faces[7]]: "D",
+            [faces[0]]: "U", // u
+            [faces[1]]: "F", // r
+            [faces[2]]: "R", // br
+            [faces[3]]: "L", // f
+            [faces[4]]: "B", // bl
+            [faces[5]]: "BR", // l
+            [faces[6]]: "BL", // b
+            [faces[7]]: "D", // d
         }
     }
     return rotationMap;
