@@ -1,5 +1,5 @@
 import { IMPOSSIBLE, OVERLOAD_PENALTY, CONFIGS } from './costmodel.js';
-import { transposeAlg, ROTATIONMAPPING } from './transpose.js';
+import { transposeAlg, ROTATIONMAPPING, makeWide } from './transpose.js';
 
 function getCorrectNotationFromRotation(rot) {
   if (!rot) {
@@ -18,7 +18,6 @@ function getCorrectNotationFromRotation(rot) {
   };
   
   const letters = rot.replaceAll(/\{|\}/g, '').split(',');
-  console.log(letters);
   return faceMap[letters[0]][letters[1]];
 }
 
@@ -146,20 +145,26 @@ function _search_alg(tokens, index, fingertricks, thumbs, cost, config, regrips,
 
 function explore_alg(tokenized, configs, rotationMap) {
   const pathOptions = [];
-  
   const algVariants = [];
   if (!tokenized.rot) {
     for (const rot of Object.keys(rotationMap)) {
-      algVariants.push(transposeAlg(tokenized, rot));
+      var transposed = transposeAlg(tokenized, rot);
+      var widified = transposed;
+      for (var i = 0; i < transposed.tokens.length; i++) {
+        const wider = makeWide(widified, i);
+        if (wider !== null) {
+          widified = wider;
+          console.log(widified);
+        }
+      }
+      algVariants.push(widified);
     }
   } else {
     algVariants.push(tokenized);
   }
   for (const tokenized of algVariants) { 
-    console.log(tokenized.rot)
     const notation = getCorrectNotationFromRotation(tokenized.rot); 
     const rotationCost = configs.CIF.rotationCosts[tokenized.rot];
-    console.log(notation);
     const config = configs[notation];
     for (const key of Object.keys(config.transitions)) {
       const result = _search_alg(tokenized.tokens, 0, [], [key], rotationCost, config, 0, false);
