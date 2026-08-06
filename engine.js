@@ -144,12 +144,12 @@ function _search_alg(tokens, index, fingertricks, thumbs, cost, config, regrips,
   return bestResult;
 }
 
-function explore_alg(tokenized, configs) {
+function explore_alg(tokenized, configs, rotationMap) {
   const pathOptions = [];
   
   const algVariants = [];
   if (!tokenized.rot) {
-    for (const rot of Object.keys(ROTATIONMAPPING)) {
+    for (const rot of Object.keys(rotationMap)) {
       algVariants.push(transposeAlg(tokenized, rot));
     }
   } else {

@@ -1,4 +1,4 @@
-import { parse_alg, explore_alg, resultToAlgStr, CONFIGS } from './engine.js';
+import { parse_alg, explore_alg, resultToAlgStr, CONFIGS, ROTATIONMAPPING } from './engine.js';
 
 function normalizeFinger(f) {
   if (!f) return { base: 'none', left: false };
@@ -116,6 +116,37 @@ function getActiveConfigs() {
   return uploadedConfigs || CONFIGS;
 }
 
+function getActiveRotationMapping() {
+  const container = document.getElementById('rotationToggles');
+  if (!container) return ROTATIONMAPPING;
+  const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map((box) => box.value);
+  if (checked.length === 0) return {};
+  const filtered = {};
+  for (const key of checked) {
+    if (key in ROTATIONMAPPING) filtered[key] = ROTATIONMAPPING[key];
+  }
+  return filtered;
+}
+
+function renderRotationToggles() {
+  const container = document.getElementById('rotationToggles');
+  if (!container) return;
+  const keys = Object.keys(ROTATIONMAPPING);
+  container.innerHTML = keys.map((key) => `
+    <label class="rotation-toggle">
+      <input type="checkbox" value="${escapeHtml(key)}" checked>
+      <span>${escapeHtml(key)}</span>
+    </label>`).join('');
+
+  const allBtn = document.getElementById('rotationsAll');
+  const noneBtn = document.getElementById('rotationsNone');
+  const setAll = (state) => {
+    container.querySelectorAll('input[type="checkbox"]').forEach((box) => { box.checked = state; });
+  };
+  if (allBtn) allBtn.addEventListener('click', () => setAll(true));
+  if (noneBtn) noneBtn.addEventListener('click', () => setAll(false));
+}
+
 
 function downloadConfigs() {
   const payload = JSON.stringify(CONFIGS, null, 2);
@@ -176,7 +207,7 @@ function analyze() {
     const configs = getActiveConfigs();
     let results = [];
     try {
-      results = explore_alg(tokenized, configs);
+      results = explore_alg(tokenized, configs, getActiveRotationMapping());
     } catch (error) {
       results = [];
     }
@@ -383,6 +414,7 @@ function init() {
   }
   
   updateConfigStatus('Using built-in CONFIGS');
+  renderRotationToggles();
 }
 
 document.addEventListener('DOMContentLoaded', init);

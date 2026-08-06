@@ -29,7 +29,20 @@
       </div>
       <input id="uploadConfig" type="file" accept="application/json,.json" hidden>
       <button id="analyze">Analyze</button>
-      <details id="advanced-settings-details">
+      <details class="advanced-settings-details">
+        <summary>Rotation Selection</summary>
+        <div class="rotation-toggles-wrap">
+          <div class="rotation-toggles-head">
+            <span class="field-label">Rotations</span>
+            <div class="rotation-toggles-actions">
+              <button id="rotationsAll" type="button" class="link-btn">All</button>
+              <button id="rotationsNone" type="button" class="link-btn">None</button>
+            </div>
+          </div>
+          <div id="rotationToggles" class="rotation-toggles"></div>
+        </div>
+      </details>
+      <details class="advanced-settings-details">
         <summary>Advanced Settings</summary>
         <div class="controls" style="margin-top: 10px; justify-content: flex-start;">
           <span id="configStatus" class="hint">Using built-in CONFIGS</span>
