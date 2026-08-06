@@ -50,14 +50,24 @@ function renderLegend() {
       </div>`;
 }
 
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+
 function renderOptionBlock(result, index, showHeader) {
   const startThumb = result.fingertricks.length > 0 ? result.fingertricks[0].thumb : null;
+  const algStr = resultToAlgStr(result);
   let html = '<div class="option-block">';
   if (showHeader) {
     html += `
         <div class="option-head">
           <span class="option-index">Option ${index + 1}</span>
           <span class="option-cost">${result.cost.toFixed(2)}</span>
+          <button class="copy-btn option-copy-btn" type="button" data-alg="${escapeHtml(algStr)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span class="copy-btn-label">Copy</span>
+          </button>
         </div>`;
   }
   if (startThumb) {
@@ -75,7 +85,7 @@ function renderOptionBlock(result, index, showHeader) {
     html += `
         <div class="move${move.regrip ? ' regrip' : ''}">
           <span class="move-thumb" style="background:${thumbColor}">${thumbLabel}</span>
-          <span class="move-thumb" style="background:${leftColor}">${base}</span>
+          <span class="move-thumb" style="background:${leftColor}">${capitalizeFirstLetter(base)}</span>
           <span class="move-token">${escapeHtml(move.token)}</span>
           ${move.regrip ? '<span class="move-regrip-tag">regrip</span>' : ''}
         </div>`;
@@ -214,9 +224,9 @@ function analyze() {
     const barColor = costColor(best.cost, min, max);
     const algStr = resultToAlgStr(best);
     html += `
-        <details class="card">
+        <details class="card" data-alg="${escapeHtml(algStr)}">
           <summary>
-            <span class="rank">${index + 1}</span>
+            <span class="rank selectable" title="Click to select">${index + 1}</span>
             <span class="alg-text">${escapeHtml(algStr)}</span>
             <span class="meta">
               ${startThumb ? `<span class="thumb-chip">start: ${THUMB_LABEL[startThumb] || startThumb}</span>` : ''}
@@ -224,6 +234,10 @@ function analyze() {
                 <span class="cost-bar-track"><span class="cost-bar-fill" style="width:${pct}%;background:${barColor}"></span></span>
                 <span class="cost-num" style="color:${barColor}">${best.cost.toFixed(2)}</span>
               </span>
+              <button class="copy-btn option-copy-btn summary-copy-btn" type="button" data-alg="${escapeHtml(algStr)}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                <span class="copy-btn-label">Copy</span>
+              </button>
             </span>
             <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
           </summary>
@@ -234,18 +248,41 @@ function analyze() {
   resultsSection.innerHTML = html;
   
   const copyBtn = document.getElementById('copyResults');
+  const copyBtnLabel = copyBtn ? copyBtn.querySelector('.copy-btn-label') : null;
+  const updateCopyBtnLabel = () => {
+    if (!copyBtnLabel) return;
+    const count = resultsSection.querySelectorAll('.card.selected').length;
+    copyBtnLabel.textContent = count > 0 ? `Copy selected (${count})` : 'Copy top executions';
+  };
   if (copyBtn) {
-    copyBtn.addEventListener('click', () => copyTopExecutions(entries, copyBtn));
+    copyBtn.addEventListener('click', () => copyTopExecutions(resultsSection, entries, copyBtn, updateCopyBtnLabel));
   }
+
+  resultsSection.querySelectorAll('.rank.selectable').forEach((rank) => {
+    rank.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const card = rank.closest('.card');
+      if (card) {
+        card.classList.toggle('selected');
+        updateCopyBtnLabel();
+      }
+    });
+  });
+
+  resultsSection.querySelectorAll('.option-copy-btn').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      copyExecution(button.dataset.alg || '', button);
+    });
+  });
 }
 
-function copyTopExecutions(entries, btn) {
-  const lines = entries.filter((entry) => entry.best).map((entry) => resultToAlgStr(entry.best));
-  const text = lines.join('\n');
+function makeButtonFeedback(btn) {
   const label = btn.querySelector('.copy-btn-label');
   const originalLabel = label ? label.textContent : '';
-  
-  const showState = (message, ok) => {
+  return (message, ok) => {
     if (!label) return;
     label.textContent = message;
     btn.classList.toggle('copied', ok);
@@ -254,12 +291,9 @@ function copyTopExecutions(entries, btn) {
       btn.classList.remove('copied');
     }, 1500);
   };
-  
-  if (!text) {
-    showState('No valid executions', false);
-    return;
-  }
-  
+}
+
+function writeToClipboard(text, showState) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text)
     .then(() => showState('Copied!', true))
@@ -280,6 +314,38 @@ function copyTopExecutions(entries, btn) {
     showState('Copy failed', false);
   }
   document.body.removeChild(helper);
+}
+
+function copyExecution(text, btn) {
+  const showState = makeButtonFeedback(btn);
+  if (!text) {
+    showState('Nothing to copy', false);
+    return;
+  }
+  writeToClipboard(text, showState);
+}
+
+function copyTopExecutions(resultsSection, entries, btn, onDone) {
+  const selectedCards = resultsSection ? resultsSection.querySelectorAll('.card.selected') : [];
+  let text;
+  let emptyMsg;
+  if (selectedCards.length > 0) {
+    text = Array.from(selectedCards).map((card) => card.dataset.alg || '').filter(Boolean).join('\n');
+    emptyMsg = 'No valid selection';
+  } else {
+    text = entries.filter((entry) => entry.best).map((entry) => resultToAlgStr(entry.best)).join('\n');
+    emptyMsg = 'No valid executions';
+  }
+  const baseShow = makeButtonFeedback(btn);
+  const showState = (message, ok) => {
+    baseShow(message, ok);
+    if (onDone) setTimeout(onDone, 1600);
+  };
+  if (!text) {
+    showState(emptyMsg, false);
+    return;
+  }
+  writeToClipboard(text, showState);
 }
 
 function init() {
