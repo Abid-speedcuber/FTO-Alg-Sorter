@@ -1,4 +1,4 @@
-import { parse_alg, explore_alg, resultToAlgStr, CONFIGS, ROTATIONMAPPING } from './engine.js';
+import { parse_alg, explore_alg, resultToAlgStr, CONFIGS, ROTATIONMAPPING, getCorrectNotationFromRotation } from './engine.js';
 
 function normalizeFinger(f) {
   if (!f) return { base: 'none', left: false };
@@ -55,10 +55,14 @@ function capitalizeFirstLetter(string) {
 }
 
 
-function renderOptionBlock(result, index, showHeader) {
+const optionExecutions = new WeakMap();
+let renderedExecutions = [];
+
+function renderOptionBlock(result, index, showHeader, entry) {
+  const executionId = renderedExecutions.push({ result, index, showHeader, entry }) - 1;
   const startThumb = result.fingertricks.length > 0 ? result.fingertricks[0].thumb : null;
   const algStr = resultToAlgStr(result);
-  let html = '<div class="option-block">';
+  let html = `<div class="option-block" data-execution="${executionId}">`;
   if (showHeader) {
     html += `
         <div class="option-head">
@@ -74,7 +78,7 @@ function renderOptionBlock(result, index, showHeader) {
     html += `<div class="start-line">${result.rot} (${result.rotCost}) · thumb at <span style="color:${THUMB_COLOR[startThumb] || 'var(--text-muted)'}">${THUMB_LABEL[startThumb] || startThumb}</span></div>`;
   }
   html += '<div class="move-list">';
-  for (const move of result.fingertricks) {
+  for (const [moveIndex, move] of result.fingertricks.entries()) {
     const { base, left } = normalizeFinger(move.finger);
     var leftColor = HAND_COLOR['right'];
     if (left) {
@@ -83,7 +87,7 @@ function renderOptionBlock(result, index, showHeader) {
     const thumbColor = THUMB_COLOR[move.thumb] || 'var(--text-muted)';
     const thumbLabel = THUMB_LABEL[move.thumb] || move.thumb || '?';
     html += `
-        <div class="move${move.regrip ? ' regrip' : ''}">
+        <div class="move${move.regrip ? ' regrip' : ''}" data-move="${moveIndex}" title="Right-click or hold to change regrip">
           <span class="move-thumb" style="background:${thumbColor}">${thumbLabel}</span>
           <span class="move-thumb" style="background:${leftColor}">${capitalizeFirstLetter(base)}</span>
           <span class="move-token">${escapeHtml(move.token)}</span>
@@ -93,6 +97,121 @@ function renderOptionBlock(result, index, showHeader) {
   html += '</div></div>';
   return html;
 }
+
+function bindOptionExecutions(root, configs) {
+  root.querySelectorAll('.option-block').forEach(block => {
+    optionExecutions.set(block, { ...renderedExecutions[block.dataset.execution], configs });
+  });
+  renderedExecutions = [];
+}
+
+function showRegripMenu(move, clientX, clientY) {
+  document.querySelector('.regrip-menu')?.remove();
+  const block = move.closest('.option-block');
+  const { result, index, showHeader, entry, configs } = optionExecutions.get(block);
+  const moveIndex = Number(move.dataset.move);
+  const config = configs[getCorrectNotationFromRotation(result.rot)];
+  const menu = document.createElement('div');
+  menu.className = 'regrip-menu';
+  menu.setAttribute('role', 'menu');
+  const label = document.createElement('div');
+  label.textContent = `Regrip before ${result.fingertricks[moveIndex].token}`;
+  menu.append(label);
+  const currentThumb = moveIndex === 0 ? result.startThumb :
+    result.fingertricks[moveIndex - 1].finger === 'wrist'
+      ? config.transitions[result.fingertricks[moveIndex - 1].thumb][result.fingertricks[moveIndex - 1].token]
+      : result.fingertricks[moveIndex - 1].thumb;
+  const choices = moveIndex === 0 ? [] : Object.keys(config.regripCosts[currentThumb] || {});
+  for (const target of [...choices, 'none']) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('role', 'menuitem');
+    button.textContent = target === 'none' ? 'Remove regrip' : `Thumb to ${THUMB_LABEL[target]}`;
+    button.disabled = moveIndex === 0 || (target === 'none' && !result.fingertricks[moveIndex].regrip);
+    button.addEventListener('click', () => {
+      const regrips = Object.fromEntries(result.fingertricks.slice(1).map((m, i) => [i + 1, m.regrip ? m.thumb : 'none']));
+      regrips[moveIndex] = target;
+      const updated = explore_alg({ tokens: result.fingertricks.map(m => m.token), rot: result.rot, auf: result.auf }, configs, {}, {
+        limit: 1, startThumb: result.startThumb, regrips
+      })[0];
+      if (!updated) {
+        label.textContent = 'No valid path with this regrip';
+        return;
+      }
+      // Edit this option in place without rerunning the automatic ranking.
+      const holder = document.createElement('div');
+      holder.innerHTML = renderOptionBlock(updated, index, showHeader, entry);
+      bindOptionExecutions(holder, configs);
+      const replacement = holder.firstElementChild;
+      replacement.querySelector('.option-copy-btn')?.addEventListener('click', e => copyExecution(e.currentTarget.dataset.alg, e.currentTarget));
+      entry.results[index] = updated;
+      if (index === 0) {
+        entry.best = updated;
+        const card = block.closest('.card');
+        const alg = resultToAlgStr(updated);
+        card.dataset.alg = alg;
+        card.querySelector('.alg-text').textContent = alg;
+        card.querySelector('.cost-num').textContent = updated.cost.toFixed(2);
+        card.querySelector('.summary-copy-btn').dataset.alg = alg;
+      }
+      block.replaceWith(replacement);
+      menu.remove();
+    });
+    menu.append(button);
+  }
+  document.body.append(menu);
+  menu.style.left = `${Math.max(0, Math.min(clientX, window.innerWidth - menu.offsetWidth))}px`;
+  menu.style.top = `${Math.max(0, Math.min(clientY, window.innerHeight - menu.offsetHeight))}px`;
+  menu.querySelector('button:not(:disabled)')?.focus();
+}
+
+function setupRegripGestures(resultsSection) {
+  let timer, press, heldMove;
+  const cancelHold = () => { clearTimeout(timer); press = null; };
+  resultsSection.addEventListener('contextmenu', event => {
+    const move = event.target.closest('.move');
+    if (!move) return;
+    if (press || event.pointerType === 'touch') heldMove = move;
+    cancelHold();
+    event.preventDefault();
+    showRegripMenu(move, event.clientX, event.clientY);
+  });
+  document.addEventListener('pointerdown', event => {
+    cancelHold();
+    heldMove = null;
+    if (!event.isPrimary || !['touch', 'pen'].includes(event.pointerType)) return;
+    const move = event.target.closest('.move');
+    if (!move || !resultsSection.contains(move)) return;
+    press = { x: event.clientX, y: event.clientY };
+    timer = setTimeout(() => {
+      heldMove = move;
+      showRegripMenu(move, press.x, press.y);
+      press = null;
+    }, 500);
+  });
+  document.addEventListener('pointermove', event => {
+    if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) cancelHold();
+  });
+  document.addEventListener('pointerup', cancelHold);
+  document.addEventListener('pointercancel', () => { cancelHold(); heldMove = null; });
+  document.addEventListener('scroll', cancelHold, true);
+  // Releasing a long press can generate a click; keep that click from closing the menu.
+  document.addEventListener('click', event => {
+    if (heldMove?.contains(event.target)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+    heldMove = null;
+  }, true);
+}
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('.regrip-menu')) document.querySelector('.regrip-menu')?.remove();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') document.querySelector('.regrip-menu')?.remove();
+});
+document.addEventListener('scroll', () => document.querySelector('.regrip-menu')?.remove(), true);
 
 function costColor(cost, min, max) {
   if (max === min) return 'var(--primary)';
@@ -207,7 +326,7 @@ function analyze() {
     const configs = getActiveConfigs();
     let results = [];
     try {
-      results = explore_alg(tokenized, configs, getActiveRotationMapping());
+      results = explore_alg(tokenized, configs, getActiveRotationMapping(), { limit: numOptions });
     } catch (error) {
       results = [];
     }
@@ -272,11 +391,12 @@ function analyze() {
             </span>
             <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
           </summary>
-          <div class="card-body">${results.slice(0, numOptions).map((result, optionIndex) => renderOptionBlock(result, optionIndex, numOptions > 1)).join('')}</div>
+          <div class="card-body">${results.slice(0, numOptions).map((result, optionIndex) => renderOptionBlock(result, optionIndex, numOptions > 1, entry)).join('')}</div>
         </details>`;
   });
   
   resultsSection.innerHTML = html;
+  bindOptionExecutions(resultsSection, getActiveConfigs());
   
   const copyBtn = document.getElementById('copyResults');
   const copyBtnLabel = copyBtn ? copyBtn.querySelector('.copy-btn-label') : null;
@@ -380,6 +500,7 @@ function copyTopExecutions(resultsSection, entries, btn, onDone) {
 }
 
 function init() {
+  setupRegripGestures(document.getElementById('results'));
   const analyzeButton = document.getElementById('analyze');
   const algInput = document.getElementById('algs');
   const downloadButton = document.getElementById('downloadConfig');

@@ -61,89 +61,63 @@ function parse_alg(alg) {
   return { tokens, auf, rot };
 }
 
-function _search_alg(tokens, index, fingertricks, thumbs, cost, config, regrips, isRegrip) {
-  if (regrips > 1) {
-    return null;
-  }
-  
-  if (index === tokens.length) {
-    const withThumbFingerTricks = fingertricks.map((move) => ({ ...move }));
-    for (let i = 0; i < withThumbFingerTricks.length; i += 1) {
-      withThumbFingerTricks[i].thumb = thumbs[i];
-    }
-    return {
-      fingertricks: withThumbFingerTricks,
-      cost,
-      regrips
-    };
-  }
-  
-  const currentThumb = thumbs[thumbs.length - 1];
-  const currentToken = tokens[index];
-  const baseCostOptions = config.costmodel[currentThumb][currentToken] || [];
-  let costOptions = baseCostOptions.map((option) => ({ ...option, token: currentToken }));
-  
-  if (costOptions.length > 0 && costOptions[0].finger === 'wrist') {
-    const alternative = config.wristEquivalences[currentToken];
-    const alternativeOptions = (config.costmodel[currentThumb][alternative] || []).map((option) => ({ ...option, token: alternative }));
-    costOptions = costOptions.concat(alternativeOptions);
-  }
-  
-  if (isRegrip) {
-    for (const option of costOptions) {
-      option.regrip = true;
-    }
-  }
-  
-  let lastFinger = '';
-  if (fingertricks.length > 0) {
-    lastFinger = fingertricks[fingertricks.length - 1].finger;
-  }
-  
-  const optionResults = [];
-  for (const option of costOptions) {
-    let newThumb = currentThumb;
-    if (option.finger === 'wrist') {
-      newThumb = config.transitions[currentThumb][option.token];
-    }
-    
-    if ((option.finger === 'wrist' && !config.transitions[currentThumb][option.token]) || option.cost === IMPOSSIBLE) {
-      for (const key of Object.keys(config.transitions)) {
-        const regripCost = config.regripCosts[currentThumb][key];
-        if (regripCost && index > 0) {
-          const newThumbsRegrip = [...thumbs];
-          newThumbsRegrip[newThumbsRegrip.length - 1] = key;
-          optionResults.push(_search_alg(tokens, index, fingertricks, newThumbsRegrip, cost + regripCost, config, regrips + 1, true));
+// Keep the cheapest distinct paths, including optional regrips before any move.
+// Memoizing suffixes keeps the expanded search practical.
+function searchExecution(tokens, config, startThumb, options) {
+  const { limit, regrips = {} } = options;
+  const maxRegrips = Math.max(1, Object.values(regrips).filter(grip => grip && grip !== 'none').length);
+  const memo = new Map();
+  function visit(index, thumb, lastFinger, remaining) {
+    if (index === tokens.length) return [{ cost: 0, regrips: 0, fingertricks: [] }];
+    const state = JSON.stringify([index, thumb, lastFinger, remaining]);
+    if (memo.has(state)) return memo.get(state);
+    const instruction = regrips[index];
+    const grips = [];
+    if (!instruction || instruction === 'none') grips.push({ thumb, cost: 0 });
+    if (index > 0 && remaining > 0 && instruction !== 'none') {
+      for (const [target, cost] of Object.entries(config.regripCosts[thumb] || {})) {
+        if (target !== thumb && Number.isFinite(cost) && cost >= 0 &&
+            config.costmodel[target] && (!instruction || instruction === target)) {
+          grips.push({ thumb: target, cost, from: thumb });
         }
       }
-      continue;
     }
-    
-    const newFingertricks = fingertricks.concat(option);
-    const newThumbs = thumbs.concat(newThumb);
-    const currentFinger = option.finger;
-    let optionCost = cost + option.cost;
-    if (lastFinger === currentFinger && currentFinger !== 'wrist') {
-      optionCost += OVERLOAD_PENALTY;
+    const results = [];
+    for (const grip of grips) {
+      const token = tokens[index];
+      const base = config.costmodel[grip.thumb]?.[token] || [];
+      let moves = base.map(move => ({ ...move, token }));
+      if (base.some(move => move.finger === 'wrist')) {
+        const alternative = config.wristEquivalences[token];
+        moves = moves.concat((config.costmodel[grip.thumb]?.[alternative] || [])
+          .map(move => ({ ...move, token: alternative })));
+      }
+      for (const move of moves) {
+        if (!Number.isFinite(move.cost) || move.cost >= IMPOSSIBLE) continue;
+        const nextThumb = move.finger === 'wrist'
+          ? config.transitions[grip.thumb]?.[move.token] : grip.thumb;
+        if (!nextThumb) continue;
+        const regripped = grip.from !== undefined;
+        const overloadCost = lastFinger === move.finger && move.finger !== 'wrist'
+          ? OVERLOAD_PENALTY : 0;
+        for (const suffix of visit(index + 1, nextThumb, move.finger, remaining - Number(regripped))) {
+          results.push({
+            cost: grip.cost + move.cost + overloadCost + suffix.cost,
+            regrips: suffix.regrips + Number(regripped),
+            fingertricks: [{ ...move, thumb: grip.thumb, regrip: regripped }, ...suffix.fingertricks]
+          });
+        }
+      }
     }
-    
-    optionResults.push(_search_alg(tokens, index + 1, newFingertricks, newThumbs, optionCost, config, regrips, false));
+    const best = results.sort((a, b) => a.cost - b.cost).slice(0, limit);
+    memo.set(state, best);
+    return best;
   }
-  
-  let bestResult = null;
-  for (const result of optionResults) {
-    if (!result) {
-      continue;
-    }
-    if (!bestResult || result.cost < bestResult.cost) {
-      bestResult = result;
-    }
-  }
-  
-  return bestResult;
+  return visit(0, startThumb, '', maxRegrips);
 }
 
-function explore_alg(tokenized, configs, rotationMap) {
+function explore_alg(tokenized, configs, rotationMap, options = {}) {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 100));
   const pathOptions = [];
   const algVariants = [];
   if (!tokenized.rot) {
@@ -167,8 +141,10 @@ function explore_alg(tokenized, configs, rotationMap) {
     const rotationCost = configs.CIF.rotationCosts[tokenized.rot];
     const config = configs[notation];
     for (const key of Object.keys(config.transitions)) {
-      const result = _search_alg(tokenized.tokens, 0, [], [key], rotationCost, config, 0, false);
-      if (result) {
+      if (options.startThumb && options.startThumb !== key) continue;
+      for (const result of searchExecution(tokenized.tokens, config, key, { ...options, limit })) {
+        result.cost += rotationCost;
+        result.startThumb = key;
         result.auf = tokenized.auf;
         result.rot = tokenized.rot;
         result.rotCost = rotationCost;
@@ -176,7 +152,7 @@ function explore_alg(tokenized, configs, rotationMap) {
       }
     }
   }
-  return pathOptions.sort((a, b) => a.cost - b.cost);
+  return pathOptions.sort((a, b) => a.cost - b.cost).slice(0, limit);
 }
 
 function resultToAlgStr(result) {
