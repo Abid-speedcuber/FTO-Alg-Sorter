@@ -57,188 +57,89 @@ d,f,l,r,b,bl,br,u
 d,bl,b,l,r,br,f,u
 `;
 
-function buildRotationMap() {
-    const lines = transpositionMatrix.split("\n");
-    const rotationMap = {};
-    for (const line of lines) {
-        if (!line || line.startsWith('//')) continue;
-        var faces = line.split(",").map((c) => c.toUpperCase());
-        var rotationName = `{${faces[0]},${faces[1]}}`;
-        // u,r,br,f,bl,l,b,d
-        rotationMap[rotationName] = {
-            [faces[0]]: "U", // u
-            [faces[1]]: "F", // r
-            [faces[2]]: "R", // br
-            [faces[3]]: "L", // f
-            [faces[4]]: "B", // bl
-            [faces[5]]: "BR", // l
-            [faces[6]]: "BL", // b
-            [faces[7]]: "D", // d
-        }
-    }
-    return rotationMap;
+// CIF is an alternate view of the same EIF execution frame.
+// U -> F completes the face permutation supplied with this conversion.
+const CIF_TO_EIF = Object.freeze({
+    U: 'F', R: 'R', B: 'U', L: 'L', BR: 'BR', BL: 'BL', D: 'B', F: 'D'
+});
+const DEFAULT_ROTATION = '{U,R}';
+const EIF_FRONTS = {
+    U: ['R', 'B', 'L'], F: ['D', 'R', 'L'], R: ['F', 'BR', 'U'],
+    L: ['U', 'BL', 'F'], B: ['BR', 'BL', 'U'], BR: ['D', 'B', 'R'],
+    BL: ['L', 'B', 'D'], D: ['BR', 'F', 'BL']
+};
+
+function isEIF(rotation) {
+    const [top, front] = rotation.slice(1, -1).split(',');
+    return EIF_FRONTS[top]?.includes(front) ?? false;
 }
 
-const ROTATIONMAPPING = buildRotationMap();
+// The original matrix describes views relative to {U,F}. Keep it as geometry,
+// then rebase the searchable EIF views to the default {U,R} input frame.
+const viewMappings = {};
+for (const line of transpositionMatrix.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('//')) continue;
+    const faces = trimmed.toUpperCase().split(',');
+    viewMappings[`{${faces[0]},${faces[1]}}`] = Object.fromEntries(
+        faces.map((face, index) => [face, ['U', 'F', 'R', 'L', 'B', 'BR', 'BL', 'D'][index]])
+    );
+}
 
-function mapAlg(tokenized, faceMap, startIndex) {
-    const newTokens = [];
-    var processed = 0;
-    for (const token of tokenized.tokens) {
-        if (processed < startIndex) {
-            newTokens.push(token)
-            processed += 1
-            continue;
+const defaultView = viewMappings[DEFAULT_ROTATION];
+const ROTATIONMAPPING = Object.fromEntries(
+    Object.entries(viewMappings).filter(([rotation]) => isEIF(rotation)).map(([rotation, mapping]) => [
+        rotation,
+        Object.fromEntries(Object.entries(defaultView).map(([face, defaultFace]) => [defaultFace, mapping[face]]))
+    ])
+);
+
+function mapAlg(tokenized, faceMap, startIndex = 0) {
+    return tokenized.tokens.map((token, index) => {
+        if (index < startIndex) return token;
+        const match = token.match(/^([A-Za-z]+)(2'?|')?$/);
+        if (!match || !faceMap[match[1].toUpperCase()]) {
+            throw new Error(`Unsupported move: ${token}`);
         }
-        const match = token.match(/([A-Za-z]+)(2?'?)/);
-        const [, face, suffix] = match ?? [];
-        const key = face.toUpperCase();
-        const isLower = key != face;
-        var mappedFace = faceMap[face.toUpperCase()];
-        if (isLower) {
-            mappedFace = mappedFace.toLowerCase();
-        }
-        newTokens.push(mappedFace + suffix);
-        processed += 1;
-    }
-    return newTokens;
+        const [, face, suffix = ''] = match;
+        const mapped = faceMap[face.toUpperCase()];
+        return (face === face.toLowerCase() ? mapped.toLowerCase() : mapped) + suffix;
+    });
+}
+
+function normalizeToEIF(tokenized) {
+    const rotation = tokenized.rot || DEFAULT_ROTATION;
+    const mapping = viewMappings[rotation];
+    if (!mapping) throw new Error(`Unsupported orientation: ${rotation}`);
+    if (isEIF(rotation)) return { ...tokenized, rot: rotation };
+    // The CIF view's B and U become the EIF top and front respectively.
+    const originalFace = Object.fromEntries(Object.entries(mapping).map(([face, target]) => [target, face]));
+    return {
+        ...tokenized,
+        tokens: mapAlg(tokenized, CIF_TO_EIF),
+        rot: `{${originalFace.B},${originalFace.U}}`
+    };
 }
 
 function transposeAlg(tokenized, rotation) {
     const map = ROTATIONMAPPING[rotation];
-    const newTokens = mapAlg(tokenized, map, 0);
-    return {tokens: newTokens, rot: rotation, auf: tokenized.auf};
+    if (!map) throw new Error(`Unsupported EIF orientation: ${rotation}`);
+    return { tokens: mapAlg(tokenized, map), rot: rotation, auf: tokenized.auf };
 }
 
 const WIDEMOVEMAPPING = {
-    EIF: {
-        "r": {
-            "U": "B",
-            "R": "R",
-            "F": "BR",
-            "B": "L",
-            "L": "U",
-            "BL": "BL",
-            "BR": "D",
-            "D": "F",
-        },
-        "r'": {
-            "U": "L",
-            "R": "R",
-            "F": "D",
-            "B": "U",
-            "L": "B",
-            "BL": "BL",
-            "BR": "F",
-            "D": "BR",
-        }
-    },
-    CIF: {
-        r: {
-            "U": "BR",
-            "R": "R",
-            "F": "U",
-            "B": "D",
-            "L": "B",
-            "BL": "BL",
-            "BR": "F",
-            "D": "L",
-        },
-        "r'": {
-            "U": "F",
-            "R": "R",
-            "F": "BR",
-            "B": "L",
-            "L": "D",
-            "BL": "BL",
-            "BR": "U",
-            "D": "B"
-        }
-    }
+    r: { U: 'B', R: 'R', F: 'BR', B: 'L', L: 'U', BL: 'BL', BR: 'D', D: 'F' },
+    "r'": { U: 'L', R: 'R', F: 'D', B: 'U', L: 'B', BL: 'BL', BR: 'F', D: 'BR' }
 };
 
-const EIFMap = {
-    "{U,F}": "CIF",
-    "{U,BR}": "CIF",
-    "{U,BL}": "CIF",
-    "{U,R}": "EIF",
-    "{U,B}": "EIF",
-    "{U,L}": "EIF",
-
-    "{F,D}": "EIF",
-    "{F,R}": "EIF",
-    "{F,L}": "EIF",
-    "{F,BR}": "CIF",
-    "{F,U}": "CIF",
-    "{F,BL}": "CIF",
-
-    "{R,D}": "CIF",
-    "{R,B}": "CIF",
-    "{R,L}": "CIF",
-    "{R,F}": "EIF",
-    "{R,BR}": "EIF",
-    "{R,U}": "EIF",
-
-    "{L,R}": "CIF",
-    "{L,B}": "CIF",
-    "{L,D}": "CIF",
-    "{L,U}": "EIF",
-    "{L,BL}": "EIF",
-    "{L,F}": "EIF",
-
-    "{B,L}": "CIF",
-    "{B,R}": "CIF",
-    "{B,D}": "CIF",
-    "{B,BR}": "EIF",
-    "{B,BL}": "EIF",
-    "{B,U}": "EIF",
-
-    "{BR,U}": "CIF",
-    "{BR,F}": "CIF",
-    "{BR,BL}": "CIF",
-    "{BR,D}": "EIF",
-    "{BR,B}": "EIF",
-    "{BR,R}": "EIF",
-
-    "{BL,U}": "CIF",
-    "{BL,BR}": "CIF",
-    "{BL,F}": "CIF",
-    "{BL,L}": "EIF",
-    "{BL,B}": "EIF",
-    "{BL,D}": "EIF",
-
-    "{D,R}": "CIF",
-    "{D,L}": "CIF",
-    "{D,B}": "CIF",
-    "{D,BR}": "EIF",
-    "{D,F}": "EIF",
-    "{D,BL}": "EIF",
-}
-
 function makeWide(tokenized, index) {
-    const newTokenized = {
-        rot: tokenized.rot,
-        auf: tokenized.auf,
-        tokens: []
-    }
-    var token = tokenized.tokens[index];
-    if (token != "BL" && token != "BL'") {
-        return null;
-    }
-    const notation = EIFMap[tokenized.rot];
-    const faceMap = WIDEMOVEMAPPING[notation][token.replace("BL", "r")];
-
-    for (var i = 0; i < tokenized.tokens.length; i++) {
-        if (i != index) {
-            newTokenized.tokens.push(tokenized.tokens[i]);
-        } else {
-            newTokenized.tokens.push(tokenized.tokens[i].replace("BL", "r"));
-        }
-    }
-    if (tokenized.tokens.length > index + 1) {
-        newTokenized.tokens = mapAlg(newTokenized, faceMap, index + 1);
-    }
-    return newTokenized;
+    const token = tokenized.tokens[index];
+    if (token !== 'BL' && token !== "BL'") return null;
+    const replacement = token.replace('BL', 'r');
+    const widened = { ...tokenized, tokens: tokenized.tokens.slice() };
+    widened.tokens[index] = replacement;
+    widened.tokens = mapAlg(widened, WIDEMOVEMAPPING[replacement], index + 1);
+    return widened;
 }
 
-export { transposeAlg, ROTATIONMAPPING, makeWide };
+export { DEFAULT_ROTATION, CIF_TO_EIF, transposeAlg, ROTATIONMAPPING, normalizeToEIF, makeWide };

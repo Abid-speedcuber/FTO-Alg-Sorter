@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare fixed FTO algorithm costs with every saved model change and inspect execution costs move by move.">
+  <title>Cost history · FTO Fingertrick Sorter</title>
+  <link rel="stylesheet" href="cost-history.css">
+  <script type="module" src="cost-history.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">FTO</span><span>Fingertrick Sorter</span></a>
+    <nav aria-label="Main"><a href="index.html">Sorter</a><a class="active" href="visual-changelog.html" aria-current="page">Cost history</a></nav>
+    <a class="source-link" id="source-link" target="_blank" rel="noreferrer">Source sheet ↗</a>
+  </header>
+  <div class="workspace">
+    <aside class="sidebar">
+      <p class="eyebrow">NAUTILUS LL</p>
+      <h1>Cost history<span class="title-dot">.</span></h1>
+      <p class="sidebar-description">The same algorithms.<br>Every rule change, visible.</p>
+      <div class="section-heading"><h2>Sections</h2><span id="section-count">—</span></div>
+      <nav id="sections" aria-label="Algorithm sections"></nav>
+      <a class="json-link" href="data/algorithm-baseline.json" download>Download baseline JSON ↓</a>
+    </aside>
+    <main id="main">
+      <div class="page-heading">
+        <div><p class="eyebrow" id="section-position">BASELINE COMPARISON</p><h2 id="section-title">Loading the baseline…</h2><p id="section-description">Original sheet costs stay fixed. Deltas show how each change affected them.</p></div>
+        <a class="quiet-button" href="data/cost-history.json" download>History index ↓</a>
+      </div>
+      <div class="metrics" aria-label="Section summary">
+        <div><span class="metric-label">Algorithms</span><strong id="metric-count">—</strong></div>
+        <div><span class="metric-label">Lower cost</span><strong id="metric-lower" class="lower">—</strong></div>
+        <div><span class="metric-label">Higher cost</span><strong id="metric-higher" class="higher">—</strong></div>
+        <div><span class="metric-label">Unchanged</span><strong id="metric-same">—</strong></div>
+      </div>
+      <div class="toolbar">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find an algorithm or case…" aria-label="Search this section"></label>
+        <label class="select-label">Compare <select id="revision"><option value="live">Live app</option></select></label>
+        <label class="select-label">Show <select id="filter"><option value="all">All algorithms</option><option value="changed">Changed costs</option><option value="lower">Lower costs</option><option value="higher">Higher costs</option><option value="unavailable">Unavailable</option></select></label>
+      </div>
+      <div class="comparison-note"><span class="live-dot"></span><span id="comparison-note">Baseline + change = current cost. Click an algorithm for its execution.</span><span id="progress" role="status" aria-live="polite"></span></div>
+      <div class="case-controls"><span>Algorithms sorted by cost within each case</span><button id="expand-cases" type="button">Expand all</button><button id="collapse-cases" type="button">Collapse all</button></div>
+      <div id="case-cards"></div>
+      <p id="empty" hidden>No algorithms match these filters.</p>
+      <footer class="table-footer"><span id="row-count"></span><span>Same sheet algorithm & starting grip · lower cost is better</span></footer>
+      <details class="method"><summary>How the comparison works</summary><p>Baseline costs, move strings, and starting thumbs are copied from the source sheet. Each revision records the cheapest execution of that same algorithm and starting thumb using the model's regrip limit. Deltas beside the baseline are incremental, relative to the previous saved revision. The current column shows the selected revision's total. Each case collapses independently. Algorithms are sorted by current cost within their case; equal costs keep source-row order. Position change compares each entry with its baseline position in that same case. Filters do not renumber positions. Unavailable executions appear last and remain unranked. Live app evaluates the current code in your browser; save a named snapshot to retain a change permanently.</p><p>The sheet does not include original finger-by-finger paths. Popups show the selected saved or live execution, with its actual move, regrip, repeated-finger, and orientation costs. Missing executions stay unavailable and are never treated as zero.</p><p>To save a change, run <code>node scripts/snapshot-costs.mjs --id change-name --label "What changed"</code> from the repository root. Commit the resulting history with the rule change. Baseline JSON is never rewritten by this command.</p></details>
+      <div id="error" class="error" role="alert" hidden></div>
+    </main>
+  </div>
+  <dialog id="execution-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-top"><p class="eyebrow">EXECUTION DETAIL</p><button id="close-dialog" class="close-button" aria-label="Close execution details">×</button></div>
+    <h2 id="dialog-title"></h2>
+    <p id="dialog-revision" class="muted"></p>
+    <div id="dialog-content"></div>
+  </dialog>
+</body>
+</html>

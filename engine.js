@@ -1,25 +1,5 @@
 import { IMPOSSIBLE, OVERLOAD_PENALTY, CONFIGS } from './costmodel.js';
-import { transposeAlg, ROTATIONMAPPING, makeWide } from './transpose.js';
-
-function getCorrectNotationFromRotation(rot) {
-  if (!rot) {
-    return 'CIF';
-  }
-  
-  const faceMap = {
-    U: { R: 'EIF', L: 'EIF', B: 'EIF', F: 'CIF', BL: 'CIF', BR: 'CIF' },
-    R: { U: 'EIF', BR: 'EIF', F: 'EIF', L: 'CIF', B: 'CIF', D: 'CIF' },
-    F: { R: 'EIF', L: 'EIF', D: 'EIF', U: 'CIF', BL: 'CIF', BR: 'CIF' },
-    L: { U: 'EIF', F: 'EIF', BL: 'EIF', R: 'CIF', D: 'CIF', B: 'CIF' },
-    B: { U: 'EIF', BR: 'EIF', BL: 'EIF', R: 'CIF', L: 'CIF', D: 'CIF' },
-    D: { BR: 'EIF', BL: 'EIF', F: 'EIF', B: 'CIF', R: 'CIF', L: 'CIF' },
-    BR: { R: 'EIF', D: 'EIF', B: 'EIF', F: 'CIF', U: 'CIF', BL: 'CIF' },
-    BL: { B: 'EIF', L: 'EIF', D: 'EIF', U: 'CIF', F: 'CIF', BR: 'CIF' }
-  };
-  
-  const letters = rot.replaceAll(/\{|\}/g, '').split(',');
-  return faceMap[letters[0]][letters[1]];
-}
+import { transposeAlg, ROTATIONMAPPING, normalizeToEIF, makeWide } from './transpose.js';
 
 function parse_alg(alg) {
   if (typeof alg !== 'string') {
@@ -104,7 +84,11 @@ function searchExecution(tokens, config, startThumb, options) {
           results.push({
             cost: grip.cost + move.cost + overloadCost + suffix.cost,
             regrips: suffix.regrips + Number(regripped),
-            fingertricks: [{ ...move, thumb: grip.thumb, regrip: regripped }, ...suffix.fingertricks]
+            fingertricks: [{
+              ...move, thumb: grip.thumb, regrip: regripped,
+              thumbBefore: thumb, thumbAfter: nextThumb,
+              regripCost: grip.cost, overloadCost
+            }, ...suffix.fingertricks]
           });
         }
       }
@@ -128,18 +112,19 @@ function explore_alg(tokenized, configs, rotationMap, options = {}) {
         const wider = makeWide(widified, i);
         if (wider !== null) {
           widified = wider;
-          console.log(widified);
         }
       }
       algVariants.push(widified);
     }
   } else {
-    algVariants.push(tokenized);
+    algVariants.push(normalizeToEIF(tokenized));
   }
   for (const tokenized of algVariants) { 
-    const notation = getCorrectNotationFromRotation(tokenized.rot); 
-    const rotationCost = configs.CIF.rotationCosts[tokenized.rot];
-    const config = configs[notation];
+    const config = configs.EIF;
+    const rotationCost = config.rotationCosts[tokenized.rot];
+    if (!Number.isFinite(rotationCost) || rotationCost < 0) {
+      throw new Error(`Missing or invalid EIF rotation cost: ${tokenized.rot}`);
+    }
     for (const key of Object.keys(config.transitions)) {
       if (options.startThumb && options.startThumb !== key) continue;
       for (const result of searchExecution(tokenized.tokens, config, key, { ...options, limit })) {
@@ -170,7 +155,6 @@ function resultToAlgStr(result) {
 
 export {
   CONFIGS,
-  getCorrectNotationFromRotation,
   parse_alg,
   explore_alg,
   resultToAlgStr,

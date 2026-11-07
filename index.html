@@ -15,6 +15,7 @@
   <header>
     <p class="eyebrow">FTO &middot; fingertrick engine</p>
     <h1>FTO Fingertrick Sorter</h1>
+    <p><a href="visual-changelog.html" style="color: var(--primary)">View algorithm cost history →</a></p>
     <p>Paste FTO algorithms, one per line. Each is run through the fingertrick cost model and ranked by execution cost &mdash; cheapest first. Expand any result to see the finger and thumb-position path. Will try to automatically convert any BL moves to r moves. </p>
   </header>
 
@@ -22,7 +23,7 @@
     <label class="field-label" for="algs">Algorithms (one per line)</label>
     <textarea id="algs" placeholder="L U' r' F R F' r U R' L'&#10;R U R' U'&#10;F R' F' R"></textarea>
     <div class="controls">
-      <span class="hint">Defaults to CIF, switches to EIF if the alg starts with an EIF rotation.</span>
+      <span class="hint">Defaults to EIF ({U,R}). CIF views are converted to equivalent EIF orientations.</span>
       <div class="options-per-alg">
         <label for="numOptions">Options per alg</label>
         <input type="number" id="numOptions" min="1" max="100" value="2">

@@ -1,4 +1,4 @@
-import { parse_alg, explore_alg, resultToAlgStr, CONFIGS, ROTATIONMAPPING, getCorrectNotationFromRotation } from './engine.js';
+import { parse_alg, explore_alg, resultToAlgStr, CONFIGS, ROTATIONMAPPING } from './engine.js';
 
 function normalizeFinger(f) {
   if (!f) return { base: 'none', left: false };
@@ -18,13 +18,12 @@ const HAND_COLOR = {
 
 const THUMB_COLOR = {
   front: 'var(--t-front)',
-  top: 'var(--t-top)',
   'back+': 'var(--t-backplus)',
   'back-': 'var(--t-backminus)',
   bottom: 'var(--t-bottom)'
 };
 
-const THUMB_LABEL = { front: 'Front', top: 'Top', 'back+': 'Back+', 'back-': 'Back-', bottom: 'Bottom' };
+const THUMB_LABEL = { front: 'Front', 'back+': 'Back+', 'back-': 'Back-', bottom: 'Bottom' };
 
 function fingerLabel(base, left) {
   if (base === 'none') return '—';
@@ -110,7 +109,7 @@ function showRegripMenu(move, clientX, clientY) {
   const block = move.closest('.option-block');
   const { result, index, showHeader, entry, configs } = optionExecutions.get(block);
   const moveIndex = Number(move.dataset.move);
-  const config = configs[getCorrectNotationFromRotation(result.rot)];
+  const config = configs.EIF;
   const menu = document.createElement('div');
   menu.className = 'regrip-menu';
   menu.setAttribute('role', 'menu');
@@ -286,10 +285,14 @@ function uploadConfigs(file) {
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result);
-      if (!parsed || typeof parsed !== 'object' || !parsed.CIF || !parsed.EIF) {
-        throw new Error('The selected JSON must contain CIF and EIF entries.');
+      const config = parsed?.EIF;
+      const required = ['transitions', 'regripCosts', 'wristEquivalences', 'costmodel', 'rotationCosts'];
+      if (!config || required.some(key => !config[key] || typeof config[key] !== 'object') ||
+          Object.keys(ROTATIONMAPPING).some(rot =>
+            !Number.isFinite(config.rotationCosts[rot]) || config.rotationCosts[rot] < 0)) {
+        throw new Error('The selected JSON must contain a complete EIF configuration and rotation costs.');
       }
-      uploadedConfigs = parsed;
+      uploadedConfigs = { EIF: parsed.EIF };
       updateConfigStatus('Using uploaded CONFIGS');
     } catch (error) {
       uploadedConfigs = null;
