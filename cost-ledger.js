@@ -39,10 +39,12 @@ export function costBreakdown(execution) {
   const moves = execution.fingertricks.reduce((sum, move) => sum + move.cost, 0);
   const regrips = execution.fingertricks.reduce((sum, move) => sum + move.regripCost, 0);
   const overload = execution.fingertricks.reduce((sum, move) => sum + move.overloadCost, 0);
+  const startingRegrip = execution.startingRegripCost ?? 0;
   return {
+    startingRegrip: roundCost(startingRegrip),
     orientation: roundCost(execution.rotCost), moves: roundCost(moves),
     regrips: roundCost(regrips), overload: roundCost(overload),
-    total: roundCost(execution.rotCost + moves + regrips + overload)
+    total: roundCost(execution.rotCost + startingRegrip + moves + regrips + overload)
   };
 }
 

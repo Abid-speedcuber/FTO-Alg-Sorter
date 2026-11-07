@@ -113,3 +113,11 @@ Archives contain `before/algorithm-baseline.json`, `before/cost-history.json`, `
 The command refuses to advance if any algorithm cannot be evaluated, source/data changes during capture, a baseline/hash mismatch is detected, or the requested `--id` already exists. It calculates and archives before replacing active data, uses a lock to prevent simultaneous shifts, and attempts rollback if installation fails. A failed rollback preserves recovery copies and reports their location. Do not remove an interrupted-run lock without checking that no capture is still running.
 
 The command has been tested on temporary repositories; creating it did not itself shift the real dataset. Existing unreferenced snapshot directories are retained, so continue using unique snapshot IDs rather than reusing a previous period's name.
+
+## Starting regrip cost
+
+For the `{U,R}` execution orientation, the starting thumb adds 0.40 at back+, 0.50 at back-, and zero at front/bottom. Other orientations have no starting fee. The charge is applied once before ranking alternative starting grips; it does not use the allowance for later optional regrips.
+
+Defaults live in `CONFIGS.EIF.startingRegripCosts`. Config uploads missing that field inherit the built-in defaults. Each saved execution records its actual `startingRegripCost`; older snapshots without it display zero, preserving their historical totals. The popup lists starting regrip separately and includes it in the running total before move 1.
+
+The `starting-regrip` revision records this rule against the unchanged parent baseline: 2,226 entries gain 0.40 cost, 634 gain 0.50, and 12,039 remain unchanged.

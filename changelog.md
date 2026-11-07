@@ -17,6 +17,18 @@ Parent: [mihlefeld/FTO-Alg-Sorter](https://github.com/mihlefeld/FTO-Alg-Sorter)
 
 ## Unreleased
 
+### 2026-11-07 — Starting regrip penalty at {U,R}
+
+- Review: Pending review for contribution to the parent.
+- Rule: For executions in `{U,R}`, charge the starting thumb once: `back+` +0.40, `back-` +0.50, `front`/`bottom` +0.00. Other orientations receive no starting charge.
+- Scoring: Apply the fee before comparing starting grips. It does not consume the optional-regrip budget or add another charge when a later move/regrip enters a back position.
+- Configuration: Store the defaults in `EIF.startingRegripCosts`. Older uploaded configs without this field inherit the new defaults; explicit config values can customize them.
+- Explanation: Store `startingRegripCost` in each execution. Show it separately from rotation, move, and later regrip costs in the execution popup and sorter. Older recorded traces default to zero rather than inheriting a new retrospective charge.
+- Snapshot: Capture `starting-regrip` against the existing parent baseline. Exactly 2,226 `{U,R}` back+ entries increase by 0.40 and 634 back- entries by 0.50; the remaining 12,039 entries are unchanged. All fingertrick paths remain identical for their fixed starting grips. Case/global position changes are recalculated in the saved snapshot.
+- Checks: All 32 tests pass, including scope, one-time application, ranking, later wrist/manual regrips, legacy config/trace compatibility, and saved-cost reconciliation. Audit all 14,899 results against the preceding snapshot to confirm exactly the expected fees and unchanged move paths. JavaScript syntax and whitespace checks pass.
+- Baseline: Not shifted; this rule remains visible as an isolated change from the current baseline.
+- Commit(s): Not committed yet.
+
 ### 2026-11-07 — Show the complete algorithm dump continuously
 
 - Replace the 100-row pagination with one continuous list containing every matching algorithm, ordered by global cost.

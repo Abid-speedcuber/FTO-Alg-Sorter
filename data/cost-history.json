@@ -71,6 +71,77 @@
         "unavailable": 0
       },
       "globalFile": "data/history/eif-default/global.json"
+    },
+    {
+      "id": "starting-regrip",
+      "label": "Starting regrip: back+ +0.40, back- +0.50 at {U,R}",
+      "recordedAt": "2026-11-07T13:15:44.146Z",
+      "baseCommit": "3921ce9329c7e10bb34ee0f63302e3c8b2bebcb6",
+      "sourceFingerprints": {
+        "engine.js": "c0f9a6d3a4c5aea1aabb1fc387ce82123405c0ddbd305eff8482c146dc4ba3b3",
+        "costmodel.js": "1628fc6d38db2647d93ad3afdb3cdddaec257fdaba0912d90b29f65aea859df8",
+        "transpose.js": "d0c6489dcd48937763a0e9a736e159e74c671afceb1023968eeb551f7b780ac6",
+        "cost-ledger.js": "b3dbadc19c52f39bec2a632776fc6e8f789bea7203221474aa12b503074e6cb4",
+        "case-rankings.js": "dc991b1dc56098c8b1580af46ab4c0756af18203ec8dd8d0b1b596d0c83925f7"
+      },
+      "comparison": "Same source algorithm, orientation, and sheet starting thumb; cheapest current path with the engine regrip limit.",
+      "moveColumns": [
+        "token",
+        "finger",
+        "cost",
+        "thumb",
+        "thumbBefore",
+        "thumbAfter",
+        "regripCost",
+        "overloadCost",
+        "regrip"
+      ],
+      "sectionFiles": {
+        "t0": "data/history/starting-regrip/t0.json",
+        "t1": "data/history/starting-regrip/t1.json",
+        "t2": "data/history/starting-regrip/t2.json",
+        "t3": "data/history/starting-regrip/t3.json",
+        "t4": "data/history/starting-regrip/t4.json",
+        "t5": "data/history/starting-regrip/t5.json",
+        "h1": "data/history/starting-regrip/h1.json",
+        "h2": "data/history/starting-regrip/h2.json",
+        "h3": "data/history/starting-regrip/h3.json",
+        "h4": "data/history/starting-regrip/h4.json",
+        "h5": "data/history/starting-regrip/h5.json",
+        "h6": "data/history/starting-regrip/h6.json",
+        "h7": "data/history/starting-regrip/h7.json",
+        "h8": "data/history/starting-regrip/h8.json",
+        "h9": "data/history/starting-regrip/h9.json",
+        "h10": "data/history/starting-regrip/h10.json",
+        "d1": "data/history/starting-regrip/d1.json",
+        "d2": "data/history/starting-regrip/d2.json",
+        "d3": "data/history/starting-regrip/d3.json",
+        "d4": "data/history/starting-regrip/d4.json",
+        "d5": "data/history/starting-regrip/d5.json",
+        "d6": "data/history/starting-regrip/d6.json",
+        "d7": "data/history/starting-regrip/d7.json",
+        "d8": "data/history/starting-regrip/d8.json",
+        "d9": "data/history/starting-regrip/d9.json",
+        "d10": "data/history/starting-regrip/d10.json",
+        "d11": "data/history/starting-regrip/d11.json",
+        "d12": "data/history/starting-regrip/d12.json",
+        "d13": "data/history/starting-regrip/d13.json",
+        "d14": "data/history/starting-regrip/d14.json",
+        "d15": "data/history/starting-regrip/d15.json",
+        "d16": "data/history/starting-regrip/d16.json",
+        "c1": "data/history/starting-regrip/c1.json",
+        "c2": "data/history/starting-regrip/c2.json",
+        "c3": "data/history/starting-regrip/c3.json",
+        "c4": "data/history/starting-regrip/c4.json"
+      },
+      "summary": {
+        "algorithms": 14899,
+        "lower": 0,
+        "higher": 2860,
+        "unchanged": 12039,
+        "unavailable": 0
+      },
+      "globalFile": "data/history/starting-regrip/global.json"
     }
   ],
   "baselineDefinition": {

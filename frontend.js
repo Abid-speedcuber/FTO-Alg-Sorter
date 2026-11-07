@@ -74,7 +74,7 @@ function renderOptionBlock(result, index, showHeader, entry) {
         </div>`;
   }
   if (startThumb) {
-    html += `<div class="start-line">${result.rot} (${result.rotCost}) · thumb at <span style="color:${THUMB_COLOR[startThumb] || 'var(--text-muted)'}">${THUMB_LABEL[startThumb] || startThumb}</span></div>`;
+    html += `<div class="start-line">${result.rot} (${result.rotCost})${result.startingRegripCost ? ` · starting regrip ${result.startingRegripCost.toFixed(2)}` : ''} · thumb at <span style="color:${THUMB_COLOR[startThumb] || 'var(--text-muted)'}">${THUMB_LABEL[startThumb] || startThumb}</span></div>`;
   }
   html += '<div class="move-list">';
   for (const [moveIndex, move] of result.fingertricks.entries()) {

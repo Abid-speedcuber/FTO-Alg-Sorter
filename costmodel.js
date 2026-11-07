@@ -14,6 +14,9 @@ const DECENT = 1.4;
 const GOOD = 1.2;
 const IDEAL = 1;
 const eif = {
+    startingRegripCosts: {
+        "{U,R}": { front: 0, bottom: 0, 'back+': 0.4, 'back-': 0.5 }
+    },
     rotationCosts: {
         "{U,R}": 0,
         "{U,B}": ROTATION_BAD,

@@ -127,8 +127,14 @@ function explore_alg(tokenized, configs, rotationMap, options = {}) {
     }
     for (const key of Object.keys(config.transitions)) {
       if (options.startThumb && options.startThumb !== key) continue;
+      const startingCosts = config.startingRegripCosts ?? CONFIGS.EIF.startingRegripCosts;
+      const startingRegripCost = startingCosts[tokenized.rot]?.[key] ?? 0;
+      if (!Number.isFinite(startingRegripCost) || startingRegripCost < 0) {
+        throw new Error(`Invalid starting regrip cost: ${tokenized.rot} ${key}`);
+      }
       for (const result of searchExecution(tokenized.tokens, config, key, { ...options, limit })) {
-        result.cost += rotationCost;
+        result.cost += rotationCost + startingRegripCost;
+        result.startingRegripCost = startingRegripCost;
         result.startThumb = key;
         result.auf = tokenized.auf;
         result.rot = tokenized.rot;
