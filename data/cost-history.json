@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baselineSha256": "5c08d319094c9a1a24ad812f6665f9febaba40c8d61e0ecf47491ba6ab5ef7e1",
+  "baselineSha256": "7b0922928daf5c0077a633ed7e0b3bfb6782adf29071308e59f52f15b0cc4e85",
   "revisions": [
     {
       "id": "eif-default",
@@ -65,11 +65,28 @@
       },
       "summary": {
         "algorithms": 14899,
-        "lower": 8560,
+        "lower": 0,
         "higher": 0,
-        "unchanged": 6339,
+        "unchanged": 14899,
         "unavailable": 0
-      }
+      },
+      "globalFile": "data/history/eif-default/global.json"
     }
-  ]
+  ],
+  "baselineDefinition": {
+    "kind": "pinned-parent-application",
+    "repository": "https://github.com/mihlefeld/FTO-Alg-Sorter",
+    "commit": "849832601fc6febc878d3513f7007d3fc38f25e9",
+    "calculatedAt": "2026-11-07T09:47:13.981Z",
+    "sourceFileSha256": {
+      "engine.js": "e5d0fcadad7170799b16432154a02d1ddfc0cd933faccb68c24162fa1a4de395",
+      "costmodel.js": "df7a0d35040633ec20bb96b74d7eb4441842ca7b10f8be907b19460caf898d90",
+      "transpose.js": "7e0ed3ba2bcbeb6c8768a14f6a4154fc28302d05f995798bc867584570875e7c"
+    },
+    "comparison": "Cheapest execution of each sheet algorithm and orientation, fixed to its sheet starting thumb, using the pinned parent engine regrip limit.",
+    "sheetArchive": "data/archive/sheet-baseline.json",
+    "sheetArchiveSha256": "5c08d319094c9a1a24ad812f6665f9febaba40c8d61e0ecf47491ba6ab5ef7e1",
+    "algorithms": 14899,
+    "changedFromSheet": 8560
+  }
 }

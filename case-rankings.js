@@ -36,3 +36,17 @@ export function rankSection(section, scores) {
   const entriesById = Object.fromEntries(section.entries.map(entry => [entry.id, entry]));
   return buildCaseIndex(section).map(caseInfo => rankCase(caseInfo, entriesById, scores));
 }
+
+export const GLOBAL_RANKING_RULE = 'All algorithms: cost ascending, ties by source row; unavailable executions last and unranked.';
+export function globalBaselineOrder(entries) {
+  return entries.slice().sort((a, b) => a.baseline.cost - b.baseline.cost || a.sourceRow - b.sourceRow).map(entry => entry.id);
+}
+export function rankGlobal(entries, scores) {
+  const copies = Object.fromEntries(Object.entries(scores).map(([id, score]) => [id, { ...score }]));
+  const ranked = rankCase({ caseNumber: 0, entryIds: globalBaselineOrder(entries) }, Object.fromEntries(entries.map(entry => [entry.id, entry])), copies);
+  const summaries = Object.fromEntries(ranked.entryIds.filter(id => copies[id]).map(id => {
+    const { execution, ...summary } = copies[id];
+    return [id, summary];
+  }));
+  return { rankingRule: GLOBAL_RANKING_RULE, entryIds: ranked.entryIds, scores: summaries };
+}

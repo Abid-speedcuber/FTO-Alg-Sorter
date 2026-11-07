@@ -1,6 +1,9 @@
 import { CONFIGS, parse_alg, explore_alg, ROTATIONMAPPING } from './engine.js';
 
-export const roundCost = value => Math.round((value + Number.EPSILON) * 100) / 100;
+export const roundCost = value => {
+  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+  return rounded === 0 ? 0 : rounded;
+};
 export function formatDelta(value) {
   if (!Number.isFinite(value)) return 'unavailable';
   const rounded = roundCost(value);

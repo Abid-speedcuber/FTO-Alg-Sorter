@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "baselineSha256": "5c08d319094c9a1a24ad812f6665f9febaba40c8d61e0ecf47491ba6ab5ef7e1",
+  "revisions": [
+    {
+      "id": "eif-default",
+      "label": "EIF default and shared move model",
+      "recordedAt": "2026-11-07T09:09:26.325Z",
+      "baseCommit": "849832601fc6febc878d3513f7007d3fc38f25e9",
+      "sourceFingerprints": {
+        "engine.js": "589be62c829b1bd8d669b94c44b7b907eb1effe7a33f0baec8855e82fdcdbd63",
+        "costmodel.js": "a00e8d30e42234c2a570dd45008a184e4468e8fb0b83c89fe1227ebb9dc10c73",
+        "transpose.js": "d0c6489dcd48937763a0e9a736e159e74c671afceb1023968eeb551f7b780ac6",
+        "cost-ledger.js": "960d9e11efc3f89a2c3e8db046f6a1b80f52ff4ff6efb0d8ef9de4742c7db22d"
+      },
+      "comparison": "Same source algorithm, orientation, and sheet starting thumb; cheapest current path with the engine regrip limit.",
+      "moveColumns": [
+        "token",
+        "finger",
+        "cost",
+        "thumb",
+        "thumbBefore",
+        "thumbAfter",
+        "regripCost",
+        "overloadCost",
+        "regrip"
+      ],
+      "sectionFiles": {
+        "t0": "data/history/eif-default/t0.json",
+        "t1": "data/history/eif-default/t1.json",
+        "t2": "data/history/eif-default/t2.json",
+        "t3": "data/history/eif-default/t3.json",
+        "t4": "data/history/eif-default/t4.json",
+        "t5": "data/history/eif-default/t5.json",
+        "h1": "data/history/eif-default/h1.json",
+        "h2": "data/history/eif-default/h2.json",
+        "h3": "data/history/eif-default/h3.json",
+        "h4": "data/history/eif-default/h4.json",
+        "h5": "data/history/eif-default/h5.json",
+        "h6": "data/history/eif-default/h6.json",
+        "h7": "data/history/eif-default/h7.json",
+        "h8": "data/history/eif-default/h8.json",
+        "h9": "data/history/eif-default/h9.json",
+        "h10": "data/history/eif-default/h10.json",
+        "d1": "data/history/eif-default/d1.json",
+        "d2": "data/history/eif-default/d2.json",
+        "d3": "data/history/eif-default/d3.json",
+        "d4": "data/history/eif-default/d4.json",
+        "d5": "data/history/eif-default/d5.json",
+        "d6": "data/history/eif-default/d6.json",
+        "d7": "data/history/eif-default/d7.json",
+        "d8": "data/history/eif-default/d8.json",
+        "d9": "data/history/eif-default/d9.json",
+        "d10": "data/history/eif-default/d10.json",
+        "d11": "data/history/eif-default/d11.json",
+        "d12": "data/history/eif-default/d12.json",
+        "d13": "data/history/eif-default/d13.json",
+        "d14": "data/history/eif-default/d14.json",
+        "d15": "data/history/eif-default/d15.json",
+        "d16": "data/history/eif-default/d16.json",
+        "c1": "data/history/eif-default/c1.json",
+        "c2": "data/history/eif-default/c2.json",
+        "c3": "data/history/eif-default/c3.json",
+        "c4": "data/history/eif-default/c4.json"
+      },
+      "summary": {
+        "algorithms": 14899,
+        "lower": 8560,
+        "higher": 0,
+        "unchanged": 6339,
+        "unavailable": 0
+      }
+    }
+  ]
+}

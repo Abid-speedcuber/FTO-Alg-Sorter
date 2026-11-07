@@ -13,7 +13,7 @@ const baseline = JSON.parse(baselineBytes);
 const history = JSON.parse(await readFile(new URL('../data/cost-history.json', import.meta.url)));
 const first = baseline.sections[0].entries[0];
 
-test('import preserves all source algorithms in their section order and freezes sheet costs', () => {
+test('baseline preserves all source algorithms and pins the parent application costs', () => {
   assert.equal(baseline.source.algorithmCount, 14899);
   assert.equal(baseline.source.caseCount, 377);
   assert.equal(baseline.sections.length, 36);
@@ -25,7 +25,7 @@ test('import preserves all source algorithms in their section order and freezes 
   assert.equal(new Set(entries.map(entry => entry.id)).size, entries.length);
   assert.equal(new Set(entries.map(entry => entry.caseNumber)).size, 377);
   assert.deepEqual(entries.map(entry => entry.sourceRow), Array.from({ length: 14899 }, (_, i) => i + 1));
-  assert.equal(first.baseline.cost, 10.2);
+  assert.equal(first.sheetCost?.cost ?? first.baseline.cost, 10.2);
   assert.equal(first.baseline.startThumb, 'back+');
   assert.equal(first.algorithm, "(U') {U,R} r' U r' BR' r U' r' BR r'");
   assert.equal(createHash('sha256').update(baselineBytes).digest('hex'), history.baselineSha256);
@@ -37,7 +37,7 @@ test('evaluation fixes the source grip and leaves baseline values intact', () =>
   const result = evaluateEntry(first);
   assert.equal(result.status, 'ok');
   assert.equal(result.execution.startThumb, 'back+');
-  assert.equal(result.cost, 10.2);
+  assert.ok(Number.isFinite(result.cost));
   assert.equal(costBreakdown(result.execution).total, result.cost);
   assert.deepEqual(first, original);
   assert.deepEqual(unpackExecution(packExecution(result.execution)), result.execution);
@@ -156,5 +156,56 @@ test('snapshot command appends revisions, preserves baseline, and refuses overwr
     assert.equal(await readFile(indexPath, 'utf8'), indexBytes);
   } finally {
     await rm(temporary, { recursive: true, force: true });
+  }
+});
+
+
+test('recalculated baseline preserves sheet provenance and removes the false 0.40 gain', async () => {
+  // A shift intentionally replaces the active baseline. Follow its preserved
+  // parent period so this provenance regression remains valid after shifts.
+  let reference = baseline, referenceHistory = history;
+  while (reference.baselineDefinition.kind === 'working-tree-checkpoint') {
+    const file = reference.baselineDefinition.previousBaselineFile;
+    reference = JSON.parse(await readFile(new URL(`../${file}`, import.meta.url)));
+    referenceHistory = JSON.parse(await readFile(new URL(`../${file.replace('algorithm-baseline.json', 'cost-history.json')}`, import.meta.url)));
+  }
+  assert.equal(reference.schemaVersion, 2);
+  const definition = reference.baselineDefinition;
+  assert.equal(definition.kind, 'pinned-parent-application');
+  assert.equal(definition.repository, 'https://github.com/mihlefeld/FTO-Alg-Sorter');
+  assert.equal(definition.commit, '849832601fc6febc878d3513f7007d3fc38f25e9');
+  const archiveBytes = await readFile(new URL(`../${definition.sheetArchive}`, import.meta.url));
+  assert.equal(createHash('sha256').update(archiveBytes).digest('hex'), definition.sheetArchiveSha256);
+  const archived = JSON.parse(archiveBytes);
+  assert.deepEqual(archived.source, reference.source);
+  let changed = 0;
+  for (const [sectionIndex, section] of reference.sections.entries()) {
+    for (const [entryIndex, entry] of section.entries.entries()) {
+      const source = archived.sections[sectionIndex].entries[entryIndex];
+      assert.deepEqual(entry.sheetCost, { cost: source.baseline.cost, costText: source.baseline.costText });
+      const { sheetCost, ...original } = entry;
+      assert.deepEqual({ ...original, baseline: source.baseline }, source);
+      assert.equal(entry.baseline.startThumb, source.baseline.startThumb);
+      assert.equal(entry.baseline.rotation, source.baseline.rotation);
+      if (entry.baseline.cost !== entry.sheetCost.cost) changed++;
+    }
+  }
+  assert.equal(changed, definition.changedFromSheet);
+  assert.equal(changed, 8560);
+  const suspect = reference.sections.flatMap(section => section.entries).find(entry => entry.sourceRow === 9102);
+  assert.equal(suspect.sheetCost.cost, 11.6);
+  assert.equal(suspect.baseline.cost, 11.2);
+  assert.equal(suspect.baseline.cost - 11.2, 0);
+  const initial = referenceHistory.revisions.find(revision => revision.id === 'eif-default');
+  assert.deepEqual(initial.summary, { algorithms: 14899, lower: 0, higher: 0, unchanged: 14899, unavailable: 0 });
+  for (const section of reference.sections) {
+    const saved = JSON.parse(await readFile(new URL(`../${initial.sectionFiles[section.id]}`, import.meta.url)));
+    for (const entry of section.entries) {
+      const score = saved.scores[entry.id];
+      assert.equal(score.cost, entry.baseline.cost);
+      assert.equal(score.deltaFromBaseline, 0);
+      assert.equal(score.deltaFromPrevious, 0);
+      assert.equal(score.positionsGained, 0);
+    }
   }
 });

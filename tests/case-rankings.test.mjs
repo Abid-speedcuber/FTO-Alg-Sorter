@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { buildCaseIndex, rankCase } from '../case-rankings.js';
+import { buildCaseIndex, rankCase, rankGlobal, globalBaselineOrder } from '../case-rankings.js';
 
 const baselineBytes = await readFile(new URL('../data/algorithm-baseline.json', import.meta.url));
 const baseline = JSON.parse(baselineBytes);
@@ -38,7 +38,7 @@ test('gained/lost positions use the full case baseline; unavailable costs are un
   assert.equal(scores.b.positionsGained, 0);
 });
 
-test('case JSON indexes all 377 cases exactly once and preserves original baseline bytes', () => {
+test('case JSON indexes all 377 cases exactly once and matches the pinned baseline hash', () => {
   assert.equal(index.baselineSha256, createHash('sha256').update(baselineBytes).digest('hex'));
   let count = 0;
   for (const section of baseline.sections) {
@@ -79,6 +79,50 @@ test('every persisted position and cost order reconciles with its own case basel
         assert.equal(score.currentRank, position + 1);
         assert.equal(score.positionsGained, score.baselineRank - score.currentRank);
       }
+    }
+  }
+});
+
+
+test('global dump ranks across cases without overwriting case-specific movement', () => {
+  const entries = [entry('a', 1, 10, 1), entry('b', 2, 12, 2), entry('c', 3, 14, 3)];
+  const scores = {
+    a: { status: 'ok', cost: 11, currentRank: 1, positionsGained: 0, execution: { hidden: true } },
+    b: { status: 'ok', cost: 9, currentRank: 1, positionsGained: 0 },
+    c: { status: 'unavailable', cost: null }
+  };
+  const global = rankGlobal(entries, scores);
+  assert.deepEqual(globalBaselineOrder(entries), ['a', 'b', 'c']);
+  assert.deepEqual(global.entryIds, ['b', 'a', 'c']);
+  assert.equal(global.scores.b.positionsGained, 1);
+  assert.equal(global.scores.a.positionsGained, -1);
+  assert.equal(global.scores.c.currentRank, null);
+  assert.equal(scores.b.currentRank, 1);
+  assert.equal(scores.b.positionsGained, 0);
+  assert.ok(!('execution' in global.scores.a));
+  scores.b.cost = 11;
+  assert.deepEqual(rankGlobal(entries, scores).entryIds, ['a', 'b', 'c']);
+});
+
+test('prepared full dump includes every algorithm with globally reconciled positions', async () => {
+  const entries = baseline.sections.flatMap(section => section.entries);
+  const lookup = new Map(entries.map(entry => [entry.id, entry]));
+  assert.deepEqual(index.global.entryIds, globalBaselineOrder(entries));
+  const baselinePositions = new Map(index.global.entryIds.map((id, i) => [id, i + 1]));
+  for (const revision of history.revisions) {
+    const global = JSON.parse(await readFile(new URL(`../${revision.globalFile}`, import.meta.url)));
+    assert.equal(global.entryIds.length, entries.length);
+    assert.equal(new Set(global.entryIds).size, entries.length);
+    let previous = -Infinity;
+    for (const [position, id] of global.entryIds.entries()) {
+      assert.ok(lookup.has(id));
+      const score = global.scores[id];
+      if (score.status !== 'ok') continue;
+      assert.ok(score.cost >= previous);
+      previous = score.cost;
+      assert.equal(score.currentRank, position + 1);
+      assert.equal(score.baselineRank, baselinePositions.get(id));
+      assert.equal(score.positionsGained, score.baselineRank - score.currentRank);
     }
   }
 });

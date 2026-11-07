@@ -17,6 +17,41 @@ Parent: [mihlefeld/FTO-Alg-Sorter](https://github.com/mihlefeld/FTO-Alg-Sorter)
 
 ## Unreleased
 
+### 2026-11-07 — Show the complete algorithm dump continuously
+
+- Replace the 100-row pagination with one continuous list containing every matching algorithm, ordered by global cost.
+- Append rows automatically in 250-row batches, keeping controls responsive while the complete table is built. Cancel outdated batches on searches, filters, section/revision changes, or baseline-period changes.
+- Wait for complete global rankings before building the table, and display the actual rendered row count. Preserve global position changes and execution popups for all entries.
+- Validation: JavaScript syntax and page references checked; existing ranking, history, and baseline-shift tests pass. Browser verification remains unavailable without a connected browser.
+
+
+### 2026-11-07 — Full dump and baseline shifts
+
+- Review: Pending review for contribution to the parent.
+- Full dump: Add an uncategorized view of all 14,899 algorithms, sorted by selected cost ascending. Show global baseline/current positions and positions gained/lost; case views keep their separate within-case ranks. Use 100-row pagination, full-dataset search/filtering, and existing execution popups.
+- JSON: Prepare global baseline order and revision score/rank indexes. Keep execution traces lazy; calculate live global rankings in the worker. Preserve deterministic sheet-row tie order and unranked unavailable results.
+- Baseline command: Add executable `shift-baseline.sh` (optional `--label` / `--id`). It freezes and evaluates current on-disk source, closes the old period with a final snapshot, archives its baseline/history and both scoring systems, promotes current costs to the baseline, and starts a fresh comparison period at zero.
+- Older systems: Preserve pinned Git source for the initial baseline and exact working-tree source for later baselines, including uncommitted files and source hashes. Add a Baseline period selector to inspect archived comparisons. No Git commit/push is performed by the command.
+- Safeguards: Validate hashes, reject unavailable results and concurrent source/data changes, serialize shifts with a lock, and retain recovery archives if rollback fails. Original sheet provenance is preserved.
+- Checks: All 27 tests pass, including every prepared global rank, cross-case movements, two successive baseline shifts, pinned/working-tree source preservation, old snapshot accessibility, isolated next-rule deltas, duplicate IDs, and failure leaving the baseline intact. Shell and JavaScript syntax checks pass. Browser verification is unavailable without a connected browser.
+- Active baseline: The real dataset was not shifted during implementation; promotion tests used temporary repositories only.
+- Commit(s): Not committed yet.
+
+### 2026-11-07 — Recalculate baseline from the parent application
+
+- Review: Pending review for contribution to the parent.
+- Reason: The sheet's cost column came from a different, simplified scoring implementation. It is unsuitable for attributing app changes.
+- Baseline: Recalculate all 14,899 inputs with the actual parent repository at `849832601fc6febc878d3513f7007d3fc38f25e9`, verified as its current main. Execute pinned Git source in a temporary directory; preserve algorithm, orientation, and starting grip for every row. This parent commit already includes optional regrips.
+- Provenance: Preserve the original sheet baseline byte-for-byte in `data/archive/sheet-baseline.json`, archive its history index, and retain each original cost in `sheetCost`. Record the parent URL, full commit SHA, calculation time, and source-file hashes.
+- Comparison: 8,560 sheet costs differ from the parent baseline. All 14,899 current app results match the recalculated parent baseline. Rebase existing cost deltas and position changes to zero without changing historical absolute scores or fingertrick traces.
+- Example: Row 9102 now uses baseline 11.20 and current 11.20 (+0.00, zero positions gained); original sheet cost 11.60 remains available as provenance.
+- UI: Show the pinned parent commit above the metrics and identify the original sheet cost separately in the execution popup. Refresh all baseline hashes and prepared case rankings.
+- Remote note: Both local origin and upstream currently point to the personal fork. Parent HEAD was verified directly against `https://github.com/mihlefeld/FTO-Alg-Sorter`; local remote settings were left as found.
+- Checks: All 24 tests pass, including archive integrity, unchanged source inputs, provenance, all saved execution totals/ranks, the corrected 0.40 discrepancy, and future snapshot capture. JavaScript syntax checks pass. Browser verification is unavailable without a connected browser.
+- Commit(s): Not committed yet.
+
+Historical entries below describe the earlier sheet-based comparison; this recalculation supersedes their baseline and improvement counts.
+
 ### 2026-11-07 — Development setup
 
 - Use the existing clone and GitHub fork as the development workspace.

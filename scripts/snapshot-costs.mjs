@@ -1,12 +1,13 @@
-import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, rename, mkdir, access } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { rankSection, RANKING_RULE } from '../case-rankings.js';
+import { rankSection, RANKING_RULE, rankGlobal } from '../case-rankings.js';
 import { evaluateEntry, deltaFromPrevious, packExecution, MOVE_COLUMNS } from '../cost-ledger.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+try { await access(path.join(root, 'data/.baseline-shift.lock')); throw new Error('A baseline shift is in progress; capture a revision after it completes.'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 const args = process.argv.slice(2);
 const option = name => args[args.indexOf(name) + 1];
 if (!args.includes('--id') || !args.includes('--label') || !option('--id') || !option('--label')) {
@@ -46,6 +47,7 @@ await mkdir(snapshotDir, { recursive: false }).catch(async error => {
   await mkdir(path.dirname(snapshotDir), { recursive: true });
   await mkdir(snapshotDir);
 });
+const allScores = {};
 for (const section of baseline.sections) {
   const previousScores = previous
     ? JSON.parse(await readFile(path.join(root, previous.sectionFiles[section.id]), 'utf8')).scores : {};
@@ -63,12 +65,15 @@ for (const section of baseline.sections) {
     else if (result.deltaFromBaseline > 0.005) revision.summary.higher++;
     else revision.summary.unchanged++;
   }
+  Object.assign(allScores, scores);
   const cases = rankSection(section, scores);
   const relative = `data/history/${id}/${section.id}.json`;
   await writeFile(path.join(root, relative), JSON.stringify({ revisionId: id, sectionId: section.id, scores, cases, rankingRule: RANKING_RULE }) + '\n');
   revision.sectionFiles[section.id] = relative;
   console.log(`${section.group}: ${section.entries.length} algorithms evaluated`);
 }
+revision.globalFile = `data/history/${id}/global.json`;
+await writeFile(path.join(root, revision.globalFile), JSON.stringify(rankGlobal(baseline.sections.flatMap(section => section.entries), allScores)) + '\n');
 history.revisions.push(revision);
 const temp = `${historyPath}.tmp`;
 await writeFile(temp, JSON.stringify(history, null, 2) + '\n');
